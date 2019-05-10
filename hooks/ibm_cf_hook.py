@@ -7,7 +7,6 @@ class IbmCloudFunctionsHook(BaseHook):
 
     def __init__(self):
         self.exec_active = False
-        super().__init__()
 
     def get_conn(self):
         executor = None

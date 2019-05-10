@@ -2,10 +2,10 @@ from airflow.utils.decorators import apply_defaults
 from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
 
-from ibm_cloud-functions_airflow_plugin.hooks.ibm_cf_hook import IbmCloudFunctionsHook
+from ibm_cloud_functions_airflow_plugin.hooks.ibm_cf_hook import IbmCloudFunctionsHook
 
 
-class PythonOperator(BaseOperator):
+class IbmCloudFunctionsOperator(BaseOperator):
     template_fields = ('templates_dict', 'op_args', 'op_kwargs')
     ui_color = '#ffefeb'
 
@@ -23,7 +23,7 @@ class PythonOperator(BaseOperator):
             templates_dict=None,
             templates_exts=None,
             *args, **kwargs):
-        super(PythonOperator, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not callable(python_callable):
             raise AirflowException('`python_callable` param must be callable')
         self.python_callable = python_callable
@@ -34,7 +34,7 @@ class PythonOperator(BaseOperator):
         if templates_exts:
             self.template_ext = templates_exts
         
-        self.executor = IbmCloudFunctionsHook()
+        #self.executor = IbmCloudFunctionsHook().get_conn()
 
     def execute(self, context):
         # Export context to make it available for callables to use.
@@ -54,4 +54,7 @@ class PythonOperator(BaseOperator):
         return return_value
 
     def execute_callable(self):
-        return self.executor.call_async(self.python_callable, 5)
+        self.executor = IbmCloudFunctionsHook().get_conn()
+        self.executor.call_async(self.python_callable, 5)
+        # FIXME : Fix 'failed to import unusual_import_*_imb_cf_operator' at serverless function execution
+        return self.executor.get_result()
