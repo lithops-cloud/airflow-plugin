@@ -4,6 +4,8 @@ from airflow.exceptions import AirflowException
 
 from ibm_cloud_functions_airflow_plugin.hooks.ibm_cf_hook import IbmCloudFunctionsHook
 
+import pywren_ibm_cloud
+
 
 class IbmCloudFunctionsOperator(BaseOperator):
     template_fields = ('templates_dict', 'op_args', 'op_kwargs')
@@ -16,17 +18,17 @@ class IbmCloudFunctionsOperator(BaseOperator):
     @apply_defaults
     def __init__(
             self,
-            python_callable,
+            function_name,
+            function_path,
             op_args=None,
             op_kwargs=None,
             provide_context=False,
             templates_dict=None,
             templates_exts=None,
             *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not callable(python_callable):
-            raise AirflowException('`python_callable` param must be callable')
-        self.python_callable = python_callable
+
+        self.function_name = function_name
+        self.function_path = function_path
         self.op_args = op_args or []
         self.op_kwargs = op_kwargs or {}
         self.provide_context = provide_context
@@ -34,6 +36,14 @@ class IbmCloudFunctionsOperator(BaseOperator):
         if templates_exts:
             self.template_ext = templates_exts
         
+        # FIXME : Is this a bad approach?
+        file_functions = {}
+        function_file = open(function_path).read()
+        exec(function_file, globals(), file_functions)
+        self.function = file_functions[self.function_name]
+        print(file_functions)
+            
+        super().__init__(*args, **kwargs)
         #self.executor = IbmCloudFunctionsHook().get_conn()
 
     def execute(self, context):
@@ -55,6 +65,8 @@ class IbmCloudFunctionsOperator(BaseOperator):
 
     def execute_callable(self):
         self.executor = IbmCloudFunctionsHook().get_conn()
-        self.executor.call_async(self.python_callable, 5)
-        # FIXME : Fix 'failed to import unusual_import_*_imb_cf_operator' at serverless function execution
+        # TODO : Parameters should income from the DAG declaration
+        self.executor.call_async(self.function, 5)
         return self.executor.get_result()
+    
+    # TODO : Map & mapreduce operators
