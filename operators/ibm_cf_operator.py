@@ -7,9 +7,9 @@ from ibm_cloud_functions_airflow_plugin.hooks.ibm_cf_hook import IbmCloudFunctio
 import pywren_ibm_cloud
 import abc
 
-# FIXME : Parallel tasks not working?
-
 class IbmCloudFunctionsOperator(BaseOperator):
+    ui_color = '#c4daff'
+
     @apply_defaults
     def __init__(
             self,
@@ -18,12 +18,14 @@ class IbmCloudFunctionsOperator(BaseOperator):
             reduce_function_name=None,
             op_args=None,
             op_kwargs=None,
+            args_from_task=None,
             *args, **kwargs):
 
         if (op_args and op_kwargs):
             raise AirflowException("Args and kwargs not permitted")
         
         self.args = op_args if not op_kwargs else op_kwargs
+        self.args_from_task = args_from_task
         
         file_functions = {}
         function_file = open(module_path).read()
@@ -34,9 +36,21 @@ class IbmCloudFunctionsOperator(BaseOperator):
         super().__init__(*args, **kwargs)
 
     def execute(self, context):
+
+        if (self.args_from_task):
+            aux_args = []
+            for arg in self.args:
+                dict_arg = {}
+                for key in self.args_from_task:
+                    dict_arg[key] = arg if self.args_from_task[key] == 'op_args' else context['ti'].xcom_pull(key=self.args_from_task[key])
+                aux_args.append(dict_arg)
+            self.args = aux_args
+        
+        print(self.args)
         self.executor = IbmCloudFunctionsHook().get_conn()
         return_value = self.execute_callable()
         self.log.info("Done. Returned value was: %s", return_value)
+        context['ti'].xcom_push(key=self.task_id, value=return_value)
         return return_value
     
     @abc.abstractclassmethod
@@ -50,13 +64,15 @@ class IbmCloudFunctionsBasicOperator(IbmCloudFunctionsOperator):
             function_name,
             op_args=None,
             op_kwargs=None,
+            args_from_task=None,
             *args, **kwargs):
         
         super().__init__(
             module_path=module_path, 
             map_function_name=function_name,
             op_args=op_args,
-            op_kwargs=op_kwargs, 
+            op_kwargs=op_kwargs,
+            args_from_task=args_from_task, 
             *args, **kwargs)
     
     def execute_callable(self):
@@ -70,6 +86,7 @@ class IbmCloudFunctionsMapOperator(IbmCloudFunctionsOperator):
             function_name,
             op_args=None,
             op_kwargs=None,
+            args_from_task=None,
             *args, **kwargs):
         
         try:
@@ -82,6 +99,7 @@ class IbmCloudFunctionsMapOperator(IbmCloudFunctionsOperator):
             map_function_name=function_name,
             op_args=op_args,
             op_kwargs=op_kwargs,
+            args_from_task=args_from_task,
             *args, **kwargs)
     
     def execute_callable(self):
@@ -96,6 +114,7 @@ class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
             reduce_function_name,
             op_args=None,
             op_kwargs=None,
+            args_from_task=None,
             *args, **kwargs):
         
         try:
@@ -109,6 +128,7 @@ class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
             reduce_function_name=reduce_function_name,
             op_args=op_args,
             op_kwargs=op_kwargs,
+            args_from_task=args_from_task,
             *args, **kwargs)
     
     def execute_callable(self):
