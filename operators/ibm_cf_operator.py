@@ -13,9 +13,8 @@ class IbmCloudFunctionsOperator(BaseOperator):
     @apply_defaults
     def __init__(
             self,
-            module_path,
-            map_function_name,
-            reduce_function_name=None,
+            map_function,
+            reduce_function=None,
             op_args=None,
             op_kwargs=None,
             args_from_task=None,
@@ -24,14 +23,17 @@ class IbmCloudFunctionsOperator(BaseOperator):
         if (op_args and op_kwargs):
             raise AirflowException("Args and kwargs not permitted")
         
+        if (not callable(map_function)):
+            raise AirflowException("Map function must be a python callable")
+        
+        if (reduce_function is not None and not callable(reduce_function)):
+            raise AirflowException("Reduce function must be a python callable")
+        
         self.args = op_args if not op_kwargs else op_kwargs
         self.args_from_task = args_from_task
         
-        file_functions = {}
-        function_file = open(module_path).read()
-        exec(function_file, globals(), file_functions)
-        self.map_function = file_functions[map_function_name]
-        self.reduce_function = file_functions[reduce_function_name] if reduce_function_name else None
+        self.map_function = map_function
+        self.reduce_function = reduce_function
             
         super().__init__(*args, **kwargs)
 
@@ -46,7 +48,7 @@ class IbmCloudFunctionsOperator(BaseOperator):
                 aux_args.append(dict_arg)
             self.args = aux_args
         
-        print(self.args)
+        print("Parameters: ",self.args)
         self.executor = IbmCloudFunctionsHook().get_conn()
         return_value = self.execute_callable()
         self.log.info("Done. Returned value was: %s", return_value)
@@ -60,16 +62,14 @@ class IbmCloudFunctionsOperator(BaseOperator):
 class IbmCloudFunctionsBasicOperator(IbmCloudFunctionsOperator):
     def __init__(
             self,
-            module_path,
-            function_name,
+            function,
             op_args=None,
             op_kwargs=None,
             args_from_task=None,
             *args, **kwargs):
         
         super().__init__(
-            module_path=module_path, 
-            map_function_name=function_name,
+            map_function=function,
             op_args=op_args,
             op_kwargs=op_kwargs,
             args_from_task=args_from_task, 
@@ -82,8 +82,7 @@ class IbmCloudFunctionsBasicOperator(IbmCloudFunctionsOperator):
 class IbmCloudFunctionsMapOperator(IbmCloudFunctionsOperator):
     def __init__(
             self,
-            module_path,
-            function_name,
+            map_function,
             op_args=None,
             op_kwargs=None,
             args_from_task=None,
@@ -95,8 +94,7 @@ class IbmCloudFunctionsMapOperator(IbmCloudFunctionsOperator):
             raise AirflowException("Args must be iterable")
 
         super().__init__(
-            module_path=module_path, 
-            map_function_name=function_name,
+            map_function=map_function,
             op_args=op_args,
             op_kwargs=op_kwargs,
             args_from_task=args_from_task,
@@ -109,9 +107,8 @@ class IbmCloudFunctionsMapOperator(IbmCloudFunctionsOperator):
 class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
     def __init__(
             self,
-            module_path,
-            map_function_name,
-            reduce_function_name,
+            map_function,
+            reduce_function,
             op_args=None,
             op_kwargs=None,
             args_from_task=None,
@@ -123,9 +120,8 @@ class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
             raise AirflowException("Args must be iterable")
 
         super().__init__(
-            module_path=module_path, 
-            map_function_name=map_function_name, 
-            reduce_function_name=reduce_function_name,
+            map_function=map_function, 
+            reduce_function=reduce_function,
             op_args=op_args,
             op_kwargs=op_kwargs,
             args_from_task=args_from_task,
