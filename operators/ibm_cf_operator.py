@@ -40,15 +40,27 @@ class IbmCloudFunctionsOperator(BaseOperator):
     def execute(self, context):
 
         if (self.args_from_task):
+
+            if ('iterdata' in self.args_from_task):
+                self.args = context['ti'].xcom_pull(key=self.args_from_task['iterdata'])
+                del self.args_from_task['iterdata']
+
             aux_args = []
             for arg in self.args:
                 dict_arg = {}
                 for key in self.args_from_task:
-                    dict_arg[key] = arg if self.args_from_task[key] == 'op_args' else context['ti'].xcom_pull(key=self.args_from_task[key])
+                    if (self.args_from_task[key] == 'op_args'):
+                        dict_arg[key] = arg
+                    else:
+                        arg_from_task = context['ti'].xcom_pull(key=self.args_from_task[key])
+                        if (arg_from_task is None):
+                            dict_arg[key] = self.args_from_task[key]
+                        else:
+                            dict_arg[key] = arg_from_task
                 aux_args.append(dict_arg)
             self.args = aux_args
         
-        print("Parameters: ",self.args)
+        self.log.info("Parameters: {}".format(self.args))
         self.executor = IbmCloudFunctionsHook().get_conn()
         return_value = self.execute_callable()
         self.log.info("Done. Returned value was: %s", return_value)
@@ -58,6 +70,18 @@ class IbmCloudFunctionsOperator(BaseOperator):
     @abc.abstractclassmethod
     def execute_callable(self):
         pass
+    
+    def _check_iterable_args(self):
+        try:
+            if (self.args is not None):
+                iter(self.args)
+            else:
+                if (self.args_from_task is not None and 'iterdata' in self.args_from_task):
+                    iter(self.args_from_task['iterdata'])
+                else:
+                    raise TypeError
+        except TypeError:
+            raise AirflowException("Args must be iterable")
 
 class IbmCloudFunctionsBasicOperator(IbmCloudFunctionsOperator):
     def __init__(
@@ -88,17 +112,14 @@ class IbmCloudFunctionsMapOperator(IbmCloudFunctionsOperator):
             args_from_task=None,
             *args, **kwargs):
         
-        try:
-            iter(op_args)
-        except TypeError:
-            raise AirflowException("Args must be iterable")
-
         super().__init__(
             map_function=map_function,
             op_args=op_args,
             op_kwargs=op_kwargs,
             args_from_task=args_from_task,
             *args, **kwargs)
+        
+        super()._check_iterable_args()
     
     def execute_callable(self):
         self.executor.map(self.map_function, self.args)
@@ -113,11 +134,6 @@ class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
             op_kwargs=None,
             args_from_task=None,
             *args, **kwargs):
-        
-        try:
-            iter(op_args)
-        except TypeError:
-            raise AirflowException("Args must be iterable")
 
         super().__init__(
             map_function=map_function, 
@@ -126,6 +142,8 @@ class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
             op_kwargs=op_kwargs,
             args_from_task=args_from_task,
             *args, **kwargs)
+
+        super()._check_iterable_args()
     
     def execute_callable(self):
         self.executor.map_reduce(self.map_function, self.args, self.reduce_function)
