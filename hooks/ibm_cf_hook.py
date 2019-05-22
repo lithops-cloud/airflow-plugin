@@ -1,4 +1,5 @@
 from airflow.hooks import BaseHook
+from airflow.exceptions import AirflowException
 
 import pywren_ibm_cloud
 
@@ -22,12 +23,16 @@ class IbmCloudFunctionsHook(BaseHook):
     def get_conn(self):
         self.executor = None
         if (self.executor is None):
-            self.executor = pywren_ibm_cloud.ibm_cf_executor(
-                config=self.config, 
-                runtime=self.runtime, 
-                runtime_memory=self.runtime_memory, 
-                rabbitmq_monitor=self.rabbitmq_monitor,
-                log_level=self.log_level)
+            try:
+                self.executor = pywren_ibm_cloud.ibm_cf_executor(
+                    config=self.config, 
+                    runtime=self.runtime, 
+                    runtime_memory=self.runtime_memory, 
+                    rabbitmq_monitor=self.rabbitmq_monitor,
+                    log_level=self.log_level)
+            except Exception as e:
+                log = "Error while getting an executor for IBM Cloud Functions: {}".format(e)
+                raise AirflowException(log)
 
     def invoke_call_async(self, func, data):
         self.executor.call_async(func, data)
