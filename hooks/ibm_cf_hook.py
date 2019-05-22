@@ -28,16 +28,15 @@ class IbmCloudFunctionsHook(BaseHook):
                 runtime_memory=self.runtime_memory, 
                 rabbitmq_monitor=self.rabbitmq_monitor,
                 log_level=self.log_level)
-        return self.executor
 
-    def invoke_call_async(self, func, data, extra_env, extra_meta):
-        self.executor.call_async(func, data, extra_env=extra_env, extra_meta=extra_meta)
+    def invoke_call_async(self, func, data):
+        self.executor.call_async(func, data)
         return self.executor.get_result()
     
     def invoke_map(self, map_function, map_iterdata):
         self.executor.map(map_function, map_iterdata)
         return self.executor.get_result()
     
-    def invoke_mapreduce(self, map_function, map_iterdata, reduce_function):
+    def invoke_map_reduce(self, map_function, map_iterdata, reduce_function):
         self.executor.map_reduce(map_function, map_iterdata, reduce_function)
         return self.executor.get_result()

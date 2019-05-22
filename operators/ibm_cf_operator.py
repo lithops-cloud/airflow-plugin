@@ -4,7 +4,6 @@ from airflow.exceptions import AirflowException
 
 from ibm_cloud_functions_airflow_plugin.hooks.ibm_cf_hook import IbmCloudFunctionsHook
 
-import pywren_ibm_cloud
 import abc
 
 class IbmCloudFunctionsOperator(BaseOperator):
@@ -61,7 +60,8 @@ class IbmCloudFunctionsOperator(BaseOperator):
             self.args = aux_args
         
         self.log.info("Parameters: {}".format(self.args))
-        self.executor = IbmCloudFunctionsHook().get_conn()
+        self.hook = IbmCloudFunctionsHook()
+        self.hook.get_conn()
         return_value = self.execute_callable()
         self.log.info("Done. Returned value was: %s", return_value)
         context['ti'].xcom_push(key=self.task_id, value=return_value)
@@ -100,8 +100,7 @@ class IbmCloudFunctionsBasicOperator(IbmCloudFunctionsOperator):
             *args, **kwargs)
     
     def execute_callable(self):
-        self.executor.call_async(self.map_function, self.args)
-        return self.executor.get_result()
+        return self.hook.invoke_call_async(self.map_function, self.args)
 
 class IbmCloudFunctionsMapOperator(IbmCloudFunctionsOperator):
     def __init__(
@@ -122,8 +121,7 @@ class IbmCloudFunctionsMapOperator(IbmCloudFunctionsOperator):
         super()._check_iterable_args()
     
     def execute_callable(self):
-        self.executor.map(self.map_function, self.args)
-        return self.executor.get_result()
+        return self.hook.invoke_map(self.map_function, self.args)
 
 class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
     def __init__(
@@ -146,5 +144,4 @@ class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
         super()._check_iterable_args()
     
     def execute_callable(self):
-        self.executor.map_reduce(self.map_function, self.args, self.reduce_function)
-        return self.executor.get_result()
+        return self.hook.invoke_map_reduce(self.map_function, self.args, self.reduce_function)
