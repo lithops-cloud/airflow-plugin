@@ -7,6 +7,10 @@ import pywren_ibm_cloud
 class IbmCloudFunctionsHook(BaseHook):
 
     def __init__(self, conn_id='ibm_cf_config'):
+        """
+        Initializes hook for IBM Cloud Functions.
+        """
+        # Get config from Airflow's config parameters
         conn = self.get_connection(conn_id)
         self.config = conn.extra_dejson
 
@@ -21,6 +25,9 @@ class IbmCloudFunctionsHook(BaseHook):
         self.log_level = executor_conf["log_level"] if "log_level" in executor_conf else None
 
     def get_conn(self):
+        """
+        Initializes PyWren IBM-Cloud executor.
+        """
         self.executor = None
         if (self.executor is None):
             try:
@@ -35,13 +42,22 @@ class IbmCloudFunctionsHook(BaseHook):
                 raise AirflowException(log)
 
     def invoke_call_async(self, func, data):
+        """
+        Calls method 'call_async' from PyWren IBM-Cloud and waits for result.
+        """
         self.executor.call_async(func, data)
         return self.executor.get_result()
     
     def invoke_map(self, map_function, map_iterdata):
+        """
+        Calls method 'map' from PyWren IBM-Cloud and waits for result.
+        """
         self.executor.map(map_function, map_iterdata)
         return self.executor.get_result()
     
     def invoke_map_reduce(self, map_function, map_iterdata, reduce_function):
+        """
+        Calls method 'map_reduce' from PyWren IBM-Cloud and waits for result.
+        """
         self.executor.map_reduce(map_function, map_iterdata, reduce_function)
         return self.executor.get_result()
