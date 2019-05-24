@@ -46,26 +46,28 @@ class IbmCloudFunctionsOperator(BaseOperator):
         pass
         
     def _parameter_setup(self, context):
-        args = {}
-        for key,value in self.op_args:
-            if (re.search("^TASK:*", value) is not None):
-                value = context['ti'].xcom_pull(key=re.sub("TASK:*", "", value))
+        if self.op_args is None:
+            return {}
 
-            if (value == 'iterdata'):
-                try:
-                    iter(value)
-                except TypeError:
-                    raise AirflowException("Iterdata must be iterable")
+        args = []
 
+        for key,value in self.op_args.items():
+            if (isinstance(value, str) and re.search("^TASK:*", value) is not None):
+                self.op_args[key] = context['ti'].xcom_pull(key=re.sub("TASK:*", "", value))
+            if value == 'iterdata':
                 iter_key = key
-                
-            if (key == 'iterdata'):
-                iterdata = value
-            else:
-                args[key] = value
+            print(key, value)
+
+        if 'iterdata' in self.op_args:
+            iterdata = self.op_args['iterdata']
+            del self.op_args['iterdata']
         
-        for data in iterdata:
-            args[iter_key] = data
+            for data in iterdata:
+                param = self.op_args.copy()
+                param[iter_key] = data
+                args.append(param)
+        else:
+            args = self.op_args.copy()
         
         return args
 
