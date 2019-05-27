@@ -48,16 +48,21 @@ class IbmCloudFunctionsHook(BaseHook):
         self.executor.call_async(func, data)
         return self.executor.get_result()
     
-    def invoke_map(self, map_function, map_iterdata):
+    def invoke_map(self, map_function, map_iterdata, chunk_size, data_all_as_one, exclude_modules):
         """
         Calls method 'map' from PyWren IBM-Cloud and waits for result.
         """
-        self.executor.map(map_function, map_iterdata)
+        self.executor.map(map_function, map_iterdata, chunk_size=chunk_size, 
+            data_all_as_one=data_all_as_one, exclude_modules=exclude_modules)
         return self.executor.get_result()
     
-    def invoke_map_reduce(self, map_function, map_iterdata, reduce_function):
+    def invoke_map_reduce(self, map_function, map_iterdata, reduce_function, chunk_size,
+        reducer_one_per_object, reducer_wait_local, data_all_as_one, exclude_modules):
         """
         Calls method 'map_reduce' from PyWren IBM-Cloud and waits for result.
         """
-        self.executor.map_reduce(map_function, map_iterdata, reduce_function)
+        self.executor.map_reduce(map_function, map_iterdata, reduce_function,
+            chunk_size=chunk_size, reducer_one_per_object=reducer_one_per_object,
+            reducer_wait_local=reducer_wait_local, data_all_as_one=data_all_as_one,
+            exclude_modules=exclude_modules)
         return self.executor.get_result()

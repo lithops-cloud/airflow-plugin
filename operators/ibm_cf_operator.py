@@ -76,8 +76,8 @@ class IbmCloudFunctionsOperator(BaseOperator):
 
         for key,value in self.op_args.items():
             # Get value from a previous task
-            if (isinstance(value, str) and re.search("^TASK:*", value) is not None):
-                self.op_args[key] = context['ti'].xcom_pull(key=re.sub("TASK:*", "", value))
+            if (isinstance(value, str) and re.search("^FROM_TASK:*", value) is not None):
+                self.op_args[key] = context['ti'].xcom_pull(key=re.sub("FROM_TASK:*", "", value))
             # Get key argument to determine which argument recieves iterable data
             if value == 'iterdata':
                 iter_key = key
@@ -126,13 +126,23 @@ class IbmCloudFunctionsMapOperator(IbmCloudFunctionsOperator):
             self,
             map_function,
             op_args=None,
+            chunk_size=None,
+            data_all_as_one=True,
+            exclude_modules=None,
             *args, **kwargs):
         """
         Initializes IBM Cloud Function Basic Operator. Multiple parallel function execution.
         :param map_function : Map function callable.
-        :param op_args : Dictionary where the key is the function's parameter 
+        :param op_args : Dictionary where the key is the function's parameter
         name and value the parameter value.
+        :param chunk_size : Size (in Bytes) of the data chunks. (Default = All file)
+        :param data_all_as_one : Upload the data as a single file.
+        :param exclude_modules : Explicitly keep these modules from pickled dependencies.
         """
+
+        self.chunk_size = chunk_size
+        self.data_all_as_one = data_all_as_one
+        self.exclude_modules = exclude_modules
         
         super().__init__(
             map_function=map_function,
@@ -144,7 +154,8 @@ class IbmCloudFunctionsMapOperator(IbmCloudFunctionsOperator):
         Overrides 'execute_callable' from IbmCloudFunctionsOperator.
         Invokes multiple parallel functions over IBM Cloud Functions.
         """
-        return self.hook.invoke_map(self.map_function, self.op_args)
+        return self.hook.invoke_map(self.map_function, self.op_args, 
+            self.chunk_size, self.data_all_as_one, self.exclude_modules)
 
 class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
     def __init__(
@@ -152,6 +163,11 @@ class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
             map_function,
             reduce_function,
             op_args=None,
+            chunk_size=None,
+            reducer_one_per_object=False,
+            reducer_wait_local=False,
+            data_all_as_one=True,
+            exclude_modules=None,
             *args, **kwargs):
         """
         Initializes IBM Cloud Function Basic Operator. Multiple parallel function execution
@@ -160,18 +176,30 @@ class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
         :param op_args : Dictionary where the key is the function's parameter 
         name and value the parameter value.
         :param reduce_function : Reduce function callable.
+        :param chunk_size : Size (in Bytes) of the data chunks.
+        :param reducer_one_per_object : Invoke a reduce function for every object after partitioning.
+        :param data_all_as_one : Upload the data as a single object.
+        :param exclude_modules : Explicitly keep these mdoules from pickled dependencies.
         """
+
+        self.chunk_size = chunk_size
+        self.reducer_one_per_object = reducer_one_per_object
+        self.reducer_wait_local = reducer_wait_local
+        self.data_all_as_one = data_all_as_one
+        self.exclude_modules = exclude_modules
 
         super().__init__(
             map_function=map_function, 
             reduce_function=reduce_function,
             op_args=op_args,
             *args, **kwargs)
-    
+
     def execute_callable(self):
         """
         Overrides 'execute_callable' from IbmCloudFunctionsOperator.
         Invokes multiple parallel functions over IBM Cloud Functions and a single function
         that merges map results.
         """
-        return self.hook.invoke_map_reduce(self.map_function, self.op_args, self.reduce_function)
+        return self.hook.invoke_map_reduce(self.map_function, self.op_args, self.reduce_function,
+            self.chunk_size, self.reducer_one_per_object, self.reducer_wait_local,
+            self.data_all_as_one, self.exclude_modules)
