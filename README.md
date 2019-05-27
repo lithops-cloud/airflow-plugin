@@ -136,6 +136,9 @@ This plugin provides three new operators:
 	| ------------ | ------------- |
 	| map_function | Python callable. |
 	| op_args | Function arguments as a dictionary. **Compulsory key: 'iterdata', where the value is the iterable parallelizable data (list, dictionary, bucket names, etc.).** |
+	| chunk_size | Size (in Bytes) of the data chunks. Default: None (map per file). |
+	| data_all_as_one | Upload the function's data as a single object. Default: True |
+	| exclude_modules | Explicitly keep these modules from pickled dependencies. Default: None | 
 
 	Example:
 	```python
@@ -164,6 +167,11 @@ This plugin provides three new operators:
 	| map_function | Python callable. |
 	| reduce_function | Python callable. |
 	| op_args | Function arguments as a dictionary. **Compulsory key: 'iterdata', where the value is the iterable parallelizable data (list, dictionary, bucket names, etc.).** |
+	| chunk_size | Size (in Bytes) of the data chunks. Default: None (map per file). |
+	| reducer_one_per_object | Invoke a reducer for every object after partitioning. Default: False |
+	| reducer_wait_local | Wait for results locally. Default: False |
+	| data_all_as_one | Upload the function's data as a single object. Default: True |
+	| exclude_modules | Explicitly keep these modules from pickled dependencies. Default: None | 
 
 	Example:
 	```python
