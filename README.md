@@ -65,6 +65,7 @@ Lauch the Airflow web server and visit `localhost:8080` on your browser.
 Navigate to the 'Connections' page under the 'Admin' menu located at the top bar.
 Click on the 'Create' tab.
 ![enter image description here](https://i.ibb.co/rdWGC5Q/5.jpg)
+
 Type **ibm_cf_config** inside the 'Conn Id' text box.
 Then, paste the following configuration in the 'Extra' text box:
 ```python
@@ -78,7 +79,9 @@ Then, paste the following configuration in the 'Extra' text box:
             "api_key": "API_KEY"}}
 ```
 Please, fill in your credentials. Information of your Cloud Functions information can be found here, and for your Cloud Object Storage here. The `storage_bucket` is the COS bucket where PyWren will save/load the data needed to run the functions. Make sure to have a bucket created and put its name in that field.
+
 **Important: maintain the values inside double quotation marks.**
+
 ![enter image description here](https://i.ibb.co/4Z9KKg8/6.jpg)
 Click 'Save' to exit.
 
