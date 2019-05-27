@@ -178,6 +178,7 @@ class IbmCloudFunctionsMapReduceOperator(IbmCloudFunctionsOperator):
         :param reduce_function : Reduce function callable.
         :param chunk_size : Size (in Bytes) of the data chunks.
         :param reducer_one_per_object : Invoke a reduce function for every object after partitioning.
+        :param reducer_wait_local : Wait for results locally.
         :param data_all_as_one : Upload the data as a single object.
         :param exclude_modules : Explicitly keep these mdoules from pickled dependencies.
         """
