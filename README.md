@@ -1,4 +1,5 @@
 
+
 # IBM Cloud Functions on Apache Airflow
 
 This repository contains an Apache Airflow Plugin that provides new operators to easily deploy serverless functions tasks on IBM Cloud. It uses the IBM-Cloud PyWren library, which offers the possibility to invoke thousands of parallel tasks that run simultaneously, focusing on tasks related to big data analytics. Using Airflow default operators along with this plugin's, workflows involving decisions based on big data analytics results can be easily developed.
@@ -46,7 +47,7 @@ This plugin needs IBM-Cloud PyWren. It can be installed using `pip`:
 
 ### Airflow Setup
 
-At this point you can already copy the example DAGs provided to the `~/ariflow/dags` directory.
+At this point you can already copy the [example DAGs provided](https://github.com/aitorarjona/ibm-cf_airflow-plugin_exampleDAGs) to the `~/ariflow/dags` directory.
 
 The basic setup is enough to execute the example DAGs:
 
@@ -93,7 +94,7 @@ Remember to enable the DAG execution by toggling the 'On/Off' switch. Then, pres
 After the execution, the results can be seen in the XCom page under the 'Admin' menu at the top bar. You can also have a look at the logs of each task to check further information on the task execution.
 ![enter image description here](https://i.ibb.co/xHH9wB6/4.jpg)
 
-**Full explanations of the example DAGs can be found here.**
+**Some example DAGs can be found [here](https://github.com/aitorarjona/ibm-cf_airflow-plugin_exampleDAGs).**
 
 ## Usage
 
