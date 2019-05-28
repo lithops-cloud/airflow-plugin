@@ -20,7 +20,7 @@ In order to execute functions on IBM Cloud using PyWren, the following requireme
 
 ### Installing Apache Airflow
 
-Use `pip` to install the last stable version of Apache Aiflow. Make sure to install the Python3 version:
+Use `pip` to install the last stable version of Apache Airflow. Make sure to install the Python3 version:
 
 ```
 pip3 install apache-airflow
@@ -62,7 +62,7 @@ airflow scheduler
 
 ### IBM Cloud account credentials setup
 
-Lauch the Airflow web server and visit `localhost:8080` on your browser.
+Launch the Airflow web server and visit `localhost:8080` on your browser.
 Navigate to the 'Connections' page under the 'Admin' menu located at the top bar.
 Click on the 'Create' tab.
 ![enter image description here](https://i.ibb.co/rdWGC5Q/5.jpg)
@@ -79,7 +79,7 @@ Then, paste the following configuration in the 'Extra' text box:
 "ibm_cos": {"endpoint": "http://example.cloud-object-storage.appdomain.cloud", 
             "api_key": "API_KEY"}}
 ```
-Please, fill in your credentials. Information of your Cloud Functions information can be found here, and for your Cloud Object Storage here. The `storage_bucket` is the COS bucket where PyWren will save/load the data needed to run the functions. Make sure to have a bucket created and put its name in that field.
+Please, fill in your credentials. Information of your Cloud Functions information can be found [here](https://cloud.ibm.com/openwhisk/namespace-settings), and for your Cloud Object Storage [here](https://cloud.ibm.com/objectstorage/crn%3Av1%3Abluemix%3Apublic%3Acloud-object-storage%3Aglobal%3Aa%2F827fd5191c5d42fd9a719542dffeb22e%3Aec0fe42c-4100-4d60-8c48-310c8624c311%3A%3A?paneId=credentials). The `storage_bucket` is the COS bucket where PyWren will save/load the data needed to run the functions. Make sure to have a bucket created and put its name in that field.
 
 **Important: maintain the values inside double quotation marks.**
 
