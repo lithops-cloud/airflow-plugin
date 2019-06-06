@@ -201,9 +201,21 @@ This plugin provides three new operators:
 	# Returns: 
 	336
 	```
-#### Using PyWren builtin features
+### Using PyWren builtin features
 All the features that provide PyWren IBM Cloud can also be used in this plugin.
 To see some examples, please visit [PyWren's github repository](https://github.com/pywren/pywren-ibm-cloud/tree/master/examples).
+
+#### Specifying a bucket name to gather iterable data for map_reduce tasks
+A bucket name can be specified to obtain the iterbale data, as explained by [this](https://github.com/pywren/pywren-ibm-cloud/blob/master/examples/map_reduce_cos_bucket.py) pywren example. To specify a bucket name, include an entry to the operation arguments dictionary where the key is `'bucket'` and the value the name of the bucket.
+```python
+	map_reduce_with_bucket_objects = IbmCloudFunctionsMapOperator(
+	    task_id='my_mapreduce_task,
+	    map_function=add,
+	    op_args={'bucket' : 'my_bucket'},
+	    chunk_size=1024,
+	    dag=dag
+	)
+```
 
 ### Redirect a task result value to a task input parameter
 It is possible to redirect the output from a task to the input of another. To do so, the **value** of the **parameter key name** of the **function argument dictionary** must follow the syntax `'FROM_TASK:task_name'`, where `task_name` is the name of the task from where the output is retrieved.
