@@ -72,6 +72,10 @@ class IbmCloudFunctionsOperator(BaseOperator):
         if self.op_args is None:
             return []
 
+        # Check gather iterdata from bucket
+        if 'bucket' in self.op_args:
+            return self.op_args['bucket']
+
         args = []
 
         for key,value in self.op_args.items():
