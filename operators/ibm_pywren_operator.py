@@ -27,10 +27,11 @@ class IbmPyWrenOperator(BaseOperator):
             self,
             executor_config: dict = {},
             wait_for_result: bool = True,
-            fetch_results: bool = True,
+            fetch_result: bool = True,
             clean_data: bool = False,
             extra_env=None,
-            runtime_memory=EXECUTION_TIMEOUT,
+            runtime_memory=256,
+            timeout=EXECUTION_TIMEOUT,
             include_modules=[],
             exclude_modules=[],
             *args, **kwargs):
@@ -49,52 +50,44 @@ class IbmPyWrenOperator(BaseOperator):
         
         self.executor_config = executor_config
         self.wait_for_result = wait_for_result
-        self.fetch_results = fetch_results
+        self.fetch_result = fetch_result
         self.clean_data = clean_data
+        
         self.extra_env = extra_env
         self.runtime_memory = runtime_memory
+        self.timeout = timeout
         self.include_modules = include_modules
         self.exclude_modules = exclude_modules
 
-        self.__function_result = None
-        self.futures = None
+        self._function_result = None
+        self._futures = None
+        self._executor = None
         
         # Initialize BaseOperator
         super().__init__(*args, **kwargs)
     
-    @property
-    def result(self):
-        if self.__function_result is None:
-            self.__function_result = self.executor.get_result(self.futures)
-        return self.__function_result
-
     def execute(self, context):
         """
         Executes function. Overrides 'execute' from BaseOperator.
         """
         # Initialize IBM Cloud Functions hook
-        self.log.info("Context: {}".format(context))
-        self.executor = IbmPyWrenHook().get_conn(self.executor_config)
+        self._executor = IbmPyWrenHook().get_conn(self.executor_config)
 
-        self.futures = self.execute_callable()
+        self._futures = self.execute_callable(context)
         self.log.info("Execution Done")
 
         if self.wait_for_result:
-            self.log.info("Waiting for function completion")
-            self.executor.wait(fs=self.futures)
-        if self.fetch_results:
-            self.log.info("Getting function results")
-            self.__function_result = self.executor.get_result(fs=self.futures)
-            self.log.info("Done. Returned value was: {}".format(self.__function_result))
-            # Push function result to xcom
-            context['ti'].xcom_push(key=self.task_id, value=self.__function_result)
+            self._executor.wait(fs=self._futures)
+        if self.fetch_result and self.wait_for_result:
+            self._function_result = self._executor.get_result(fs=self._futures)
+            self.log.info("Returned value was: {}".format(self._function_result))
         
-        return_value = self.__function_result if self.fetch_results else self.futures
+        return_value = self._function_result if self.fetch_result else self._futures
         return return_value
     
     def execute_callable(self):
         raise NotImplementedError()
-        
+
     def __parameter_setup(self, context):
         """
         Generates a list of dictionaries for the arguments of every map/map_reduce function.
@@ -135,7 +128,7 @@ class IbmPyWrenOperator(BaseOperator):
 
 class IbmPyWrenCallAsyncOperator(IbmPyWrenOperator):
     def __init__(
-            self, func, data,
+            self, func, data={}, data_from_task={},
             **kwargs):
         """
         Initializes IBM Cloud Function Call Async Operator. Single function execution.
@@ -145,18 +138,21 @@ class IbmPyWrenCallAsyncOperator(IbmPyWrenOperator):
 
         self.func = func
         self.data = data
+        self.data_from_task = data_from_task
         
         super().__init__(**kwargs)
         
-    def execute_callable(self):
+    def execute_callable(self, context):
         """
         Overrides 'execute_callable' from IbmPyWrenOperator.
         Invokes a single function.
         """
-        return self.executor.call_async(
-            self, 
-            func=self.func, 
-            data=self.data, 
+        for k,v in self.data_from_task.items():
+            self.data[k] = context['task_instance'].xcom_pull(task_ids=v)
+        
+        self.log.info("Params: {}".format(self.data))
+        return self._executor.call_async(
+            self.func, self.data, 
             extra_env=self.extra_env, 
             runtime_memory=self.runtime_memory,
             timeout=self.timeout,
@@ -166,6 +162,7 @@ class IbmPyWrenCallAsyncOperator(IbmPyWrenOperator):
 class IbmPyWrenMapOperator(IbmPyWrenOperator):
     def __init__(
         self, map_function, map_iterdata,
+        iterdata_from_task=None,
         extra_params=None,
         chunk_size=None,
         chunk_n=None,
@@ -182,6 +179,7 @@ class IbmPyWrenMapOperator(IbmPyWrenOperator):
         
         self.map_function = map_function
         self.map_iterdata = map_iterdata
+        self.iterdata_from_task = iterdata_from_task
         self.extra_params = extra_params
         self.chunk_size = chunk_size
         self.chunk_n = chunk_n
@@ -189,12 +187,16 @@ class IbmPyWrenMapOperator(IbmPyWrenOperator):
         self.remote_invocation_groups = remote_invocation_groups
         self.invoke_pool_threads = invoke_pool_threads
     
-    def execute_callable(self):
+    def execute_callable(self, context):
         """
         Overrides 'execute_callable' from IbmPyWrenOperator.
         Invokes multiple parallel functions over IBM Cloud Functions.
         """
-        return self.executor.map(
+        if self.iterdata_from_task is not None:
+            self.map_iterdata = context['task_instance'].xcom_pull(task_ids=self.iterdata_from_task)
+        self.log.info("Params: {}".format(self.map_iterdata))
+
+        return self._executor.map(
             map_function=self.map_function,
             map_iterdata=self.map_iterdata,
             extra_params=self.extra_params,
@@ -214,6 +216,7 @@ class IbmPyWrenMapReduceOperator(IbmPyWrenOperator):
     def __init__(
             self,
             map_function, map_iterdata, reduce_function, 
+            iterdata_from_task=None,
             extra_params=None, 
             map_runtime_memory=None, 
             reduce_runtime_memory=None, 
@@ -235,6 +238,7 @@ class IbmPyWrenMapReduceOperator(IbmPyWrenOperator):
 
         self.map_function = map_function
         self.map_iterdata = map_iterdata
+        self.iterdata_from_task = iterdata_from_task
         self.reduce_function = reduce_function
         self.extra_params = extra_params
         self.map_runtime_memory = map_runtime_memory
@@ -249,13 +253,17 @@ class IbmPyWrenMapReduceOperator(IbmPyWrenOperator):
 
         super().__init__(**kwargs)
 
-    def execute_callable(self):
+    def execute_callable(self, context):
         """
         Overrides 'execute_callable' from IbmCloudFunctionsOperator.
         Invokes multiple parallel functions over IBM Cloud Functions and a single function
         that merges map results.
         """
-        return self.executor.map_reduce(
+        if self.iterdata_from_task is not None:
+            self.map_iterdata = context['task_instance'].xcom_pull(task_ids=self.iterdata_from_task)
+        self.log.info("Params: {}".format(self.map_iterdata))
+
+        return self._executor.map_reduce(
             map_function=self.map_function,
             map_iterdata=self.map_iterdata,
             reduce_function=self.reduce_function,
