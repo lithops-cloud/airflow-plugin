@@ -40,7 +40,7 @@ parse_data = IbmPyWrenMapOperator(
 )
 ```
 
-**3. Gather the parameter to plot and plot the data - MapReduce **
+**3. Gather the parameter to plot and plot the data - MapReduce**
 
 First, it maps over the data grouped by country on the step before and selects only the attributes we want (for example, if we want to plot temperature, we only need temperature, latitude and longitude attributes).
 Then, it reduces the results by iterating over them and plotting each coordinate onto the map, seting the color accordingly.
