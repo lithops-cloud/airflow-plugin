@@ -8,7 +8,15 @@ This plugin includes three new operators to easily unload the heavy work in your
 - PyWren IBM Cloud: https://github.com/pywren/pywren-ibm-cloud
 - CloudButton Project: http://cloudbutton.eu/
 
-- Tested on *Airflow v1.10.3* and *IBM-PyWren 1.1.2*
+
+✓ Tested on *Airflow v1.10.3* and *IBM-PyWren 1.1.2*
+
+
+## Contents
+
+1. Installation
+2. [Usage](#usage)
+3. Examples
 
 ## Usage
 
@@ -21,9 +29,10 @@ _____________________
 **Important note:** Functions must be declared outside the DAG, in a single module or within a directory. To access the functions inside the DAG, import them as regular modules.
 _____________________
 
- - IbmPyWrenCallAsyncOperator
+ - **IbmPyWrenCallAsyncOperator**
+	
 	Invokes a single function.
-    
+ 
 	| Parameter | Description | Default |
 	| --- | --- | --- |
 	| func | Python callable | _mandatory_ |
@@ -67,7 +76,8 @@ _____________________
 	8
 	```
 
- - IbmPyWrenMapOperator
+ - **IbmPyWrenMapOperator**
+	
 	Invokes multiple parallel tasks, as many as how much data is in parameter `map_iterdata`. It applies the function `map_function` to every element in `map_iterdata`:
     
 	| Parameter | Description | Default | Type |
@@ -102,7 +112,8 @@ _____________________
 	[2, 3, 4]
 	```
 	
- - `IbmCloudFunctionsMapReduceOperator`
+ - **IbmCloudFunctionsMapReduceOperator**
+	
 	Invokes multiple parallel tasks, as many as how much data is in parameter `map_iterdata`. It applies the function `map_function` to every element in `iterdata`. Finally, in invokes a `reduce_function` that gathers all the map results.
     
 	| Parameter | Description | Default | Type |
