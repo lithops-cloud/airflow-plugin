@@ -25,7 +25,7 @@ _____________________
 	Invokes a single function.
     
 	| Parameter | Description | Default |
-	| -------------- | -------------- --------------
+	| --- | --- | --- |
 	| func | Python callable | _mandatory_ |
 	| data | Key word arguments | `{}` |
 	| data_from_task | Get the output from another task as an input parameter for this function | `None` |
