@@ -25,7 +25,7 @@ class IbmPyWrenOperator(BaseOperator):
     @apply_defaults
     def __init__(
             self,
-            executor_config: dict = {},
+            pywren_executor_config: dict = {},
             wait_for_result: bool = True,
             fetch_result: bool = True,
             clean_data: bool = False,
@@ -48,7 +48,7 @@ class IbmPyWrenOperator(BaseOperator):
         object storage
         """
         
-        self.executor_config = executor_config
+        self.pywren_executor_config = pywren_executor_config
         self.wait_for_result = wait_for_result
         self.fetch_result = fetch_result
         self.clean_data = clean_data
@@ -71,60 +71,27 @@ class IbmPyWrenOperator(BaseOperator):
         Executes function. Overrides 'execute' from BaseOperator.
         """
         # Initialize IBM Cloud Functions hook
-        self._executor = IbmPyWrenHook().get_conn(self.executor_config)
+        self._executor = IbmPyWrenHook().get_conn(self.pywren_executor_config)
 
         self._futures = self.execute_callable(context)
         self.log.info("Execution Done")
 
         if self.wait_for_result:
             self._executor.wait(fs=self._futures)
+        else:
+            self.log.info("Done: Not waiting for result")
+        
         if self.fetch_result and self.wait_for_result:
             self._function_result = self._executor.get_result(fs=self._futures)
             self.log.info("Returned value was: {}".format(self._function_result))
+        else:
+            self.log.info("Done: Not downloading results")
         
         return_value = self._function_result if self.fetch_result else self._futures
         return return_value
     
-    def execute_callable(self):
+    def execute_callable(self, context):
         raise NotImplementedError()
-
-    def __parameter_setup(self, context):
-        """
-        Generates a list of dictionaries for the arguments of every map/map_reduce function.
-        Example: op_args = {'iterdata' : [1,2,3], 'x' : 'iterdata', 'y' : 7}
-        Returns: [{'x' : 1, 'y' : 7}, {'x' : 2, 'y' : 7}, {'x' : 3, 'y' : 7}]
-        """
-        # Return empty list if no parameters are provided
-        if self.op_args is None:
-            return []
-
-        # Check gather iterdata from bucket
-        if 'bucket' in self.op_args:
-            return self.op_args['bucket']
-
-        args = []
-
-        for key,value in self.op_args.items():
-            # Get value from a previous task
-            if (isinstance(value, str) and re.search("^FROM_TASK:*", value) is not None):
-                self.op_args[key] = context['ti'].xcom_pull(key=re.sub("FROM_TASK:*", "", value))
-            # Get key argument to determine which argument recieves iterable data
-            if value == 'iterdata':
-                iter_key = key
-
-        if 'iterdata' in self.op_args:
-            iterdata = self.op_args['iterdata']
-            del self.op_args['iterdata']
-        
-            for data in iterdata:
-                param = self.op_args.copy()
-                param[iter_key] = data
-                args.append(param)
-        else:
-            args = self.op_args.copy()
-        
-        return args
-
 
 class IbmPyWrenCallAsyncOperator(IbmPyWrenOperator):
     def __init__(
@@ -139,7 +106,7 @@ class IbmPyWrenCallAsyncOperator(IbmPyWrenOperator):
         self.func = func
         self.data = data
         self.data_from_task = data_from_task
-        
+
         super().__init__(**kwargs)
         
     def execute_callable(self, context):
@@ -149,7 +116,7 @@ class IbmPyWrenCallAsyncOperator(IbmPyWrenOperator):
         """
         for k,v in self.data_from_task.items():
             self.data[k] = context['task_instance'].xcom_pull(task_ids=v)
-        
+
         self.log.info("Params: {}".format(self.data))
         return self._executor.call_async(
             self.func, self.data, 

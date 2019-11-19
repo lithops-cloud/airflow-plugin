@@ -15,12 +15,14 @@ class IbmPyWrenHook(BaseHook):
         conn = self.get_connection(conn_id)
         self.credentials = conn.extra_dejson
 
-    def get_conn(self, executor_config):
+    def get_conn(self, pywren_executor_config):
         """
         Initializes PyWren IBM-Cloud executor.
         """
         try:
-            executor = pywren_ibm_cloud.function_executor(config=self.credentials, **executor_config)
+            pywren_executor_config['log_level'] = 'DEBUG'
+            pywren_executor_config['config'] = self.credentials
+            executor = pywren_ibm_cloud.function_executor(**pywren_executor_config)
         except Exception as e:
             log = "Error while getting an executor for IBM Cloud Functions: {}".format(e)
             raise AirflowException(log)
