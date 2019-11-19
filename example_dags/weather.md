@@ -1,8 +1,8 @@
-# Plotting weather data
+# Plotting meteorological data
 
 ## Workflow
 
-The workflow consists of collecting different weather data (such as temperature or pressure) from an unstructured and disorganized data source, then grouping the data by country and finally plot the data to map figures using matplotlib.
+The workflow consists of collecting different meteorological data (such as temperature or pressure) from an unstructured and disorganized data source, then grouping the data by country and finally plot the data to map figures using matplotlib.
 
 ```python
 countries = ['ES', 'PT', 'IT', 'DE', 'FR']
