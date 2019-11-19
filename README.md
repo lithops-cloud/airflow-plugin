@@ -14,9 +14,9 @@ This plugin includes three new operators to easily unload the heavy work in your
 
 ## Contents
 
-1. Installation
+1. [Installation](https://github.com/aitorarjona/ibm-pywren_airflow-plugin/blob/dev/INSTALL.md)
 2. [Usage](#usage)
-3. Examples
+3. [Examples](https://github.com/aitorarjona/ibm-pywren_airflow-plugin/tree/dev/example_dags)
 
 ## Usage
 
