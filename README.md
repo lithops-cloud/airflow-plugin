@@ -83,8 +83,8 @@ _____________________
 	| Parameter | Description | Default | Type |
 	| ------------ | ------------- | ------ | ---- |
 	| map_function | Python callable. | _mandatory_ | `callable` |
-	| map_iterdata | Iterable. Invokes a function for every element in `iterdata` | _mandatory_ | Has to implement `__iter__` |
-	| iterdata_form_task | Gets the input iterdata from another function's output | `None` | Has to implement `__iter__` |
+	| map_iterdata | Iterable. Invokes a function for every element in `iterdata` | _mandatory_ | _Has to be iterable_ |
+	| iterdata_form_task | Gets the input iterdata from another function's output | `None` | _Has to be iterable_ |
 	| extra_params | Adds extra key word arguments to map function's signature | `None` | `dict` |
 	| chunk_size | Splits the object in chunks, and every chunk gets this many bytes as input data (on invocation per chunk) | `None` | `int` |
 	| chunk_n | Splits the object in N chunks (on invocation per chunk) | `None` | `int` |
@@ -119,14 +119,14 @@ _____________________
 	| Parameter | Description | Default | Type |
 	| ------------ | ------------- | ------ | ---- |
 	| map_function | Python callable. | _mandatory_ | `callable` |
-	| map_iterdata | Iterable. Invokes a function for every element in `iterdata` | _mandatory_ | Has to implement `__iter__` |
+	| map_iterdata | Iterable. Invokes a function for every element in `iterdata` | _mandatory_ | _Has to be iterable_ |
 	| reduce_function | Python callable. | _mandatory_ | `callable` |
-	| iterdata_form_task | Gets the input iterdata from another function's output | `None` | Has to implement `__iter__` |
+	| iterdata_form_task | Gets the input iterdata from another function's output | `None` | _Has to be iterable_ |
 	| extra_params | Adds extra key word arguments to map function's signature | `None` | `dict` |
 	| map_runtime_memory | Memory to use to run the map functions | Loaded from config | `intp` |
 	| reduce_runtime_memory | Memory to use to run the reduce function | Loaded from config | `intp` |
-	| chunk_size | Splits the object in chunks, and every chunk gets this many bytes as input data (on invocation per chunk) | `None` | `int` |
-	| chunk_n | Splits the object in N chunks (on invocation per chunk) | `None` | `int` |
+	| chunk_size | Splits the object in chunks, and every chunk gets this many bytes as input data (on invocation per chunk). 'None' for processing the whole file in one function activation | `None` | `int` |
+	| chunk_n | Splits the object in N chunks (on invocation per chunk). 'None' for processing the whole file in one function activation | `None` | `int` |
 	| remote_invocation | Activates pywren's remote invocation functionality | False | `bool` |
 	| invoke_pool_threads | Number of threads to use to invoke | `500` | `int` |
 	| reducer_one_per_object | Set one reducer per object after running the partitioner | `False` | `bool` |
@@ -167,7 +167,7 @@ _____________________
   | Parameter | Description | Default | Type |
   | --- | --- | --- | --- |
   | pywren_executor_config | Pywren executor config, as a dictionary | `{}` | `dict` |
-  | wait_for_result | Waits for function/functions completion | `False` | `bool` |
+  | wait_for_result | Waits for function/functions completion | `True` | `bool` |
   | fetch_result | Downloads function/functions results upon completion | `True` | `bool` |
   | clean_data | Deletes PyWren metadata from COS | `False` | `bool` |
   | extra_env | Adds environ variables to function's runtime | `None` | `dict` |
