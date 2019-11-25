@@ -31,19 +31,19 @@ Create the `plugins` directory, and cd into it:
 
 Clone the plugin repository into it:
 
-`git clone https://github.com/aitorarjona/ibm-pywren_airflow-plugin`
+`$ git clone https://github.com/aitorarjona/ibm-pywren_airflow-plugin`
 
 This plugin needs IBM-Cloud PyWren. It can be installed using `pip`:
 
-`pip install pywren-ibm-cloud`
+`$ pip install pywren-ibm-cloud`
 
-_Optional_: Copy the example DAGs provided to the `dags` folder:
+_Optional_: Move the example DAGs provided to the `dags` folder:
 
-`cp -r example_dags ~/airflow/dags/`
+`$ mv example_dags ~/airflow/dags/`
 
 Don't forget to remove the `example-dags` folder or move it to the Airflow's dag folder (`~/airflow/dags/`):
 
-`rm -r example_dags` 
+`$ rm -r example_dags` 
 
 ### Airflow Setup
 
