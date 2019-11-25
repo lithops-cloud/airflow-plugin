@@ -68,22 +68,3 @@ def plot_temp(results, ibm_cos):
     key = 'image_{}_{}.png'.format(country, plot)
     ibm_cos.put_object(Bucket=bucket, Key=key, Body=buff)
     return key
-
-
-# import manage_data
-# import pywren_ibm_cloud as pywren
-
-# bucket = 'aitor-data'
-# countries = ['ES']
-
-# pywex = pywren.ibm_cf_executor()
-# pywex.call_async(manage_data.get_dataset, {'data_url' : 'http://bulk.openweathermap.org/sample/weather_16.json.gz', 'bucket' : bucket})
-# pywex.wait()
-
-# pywex.map(manage_data.parse_data, 'cos://{}/weather_data'.format(bucket), chunk_size=1024**2, extra_params=[countries, bucket])
-# pywex.wait()
-
-# pywex = pywren.ibm_cf_executor(runtime_memory=2048, runtime='aitorarjona/python3.6_pywren_matplotlib-basemap:1.0', log_level='DEBUG')
-# pywex.map_reduce(map_function=manage_data.get_temp_data, map_iterdata='cos://{}/ES/'.format(bucket), reduce_function=merge_data, extra_params=['ES', bucket])
-# pywex.wait()
-
