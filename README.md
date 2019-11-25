@@ -1,4 +1,4 @@
-# PyWren IBM Cloud - Apache Airflow Plugin
+# IBM PyWren: Apache Airflow Plugin
 
 This repository contains an Apache Airflow Plugin that provides new operators to easily deploy serverless functions tasks on IBM Cloud Functions. 
 IBM-Cloud PyWren offers the possibility to easily deploy map and map reduce jobs that can compute large amount of data from IBM Cloud Object Storage using thousands of parallel serverless functions. 
@@ -31,7 +31,7 @@ _____________________
 
  - **IbmPyWrenCallAsyncOperator**
 	
-	Invokes a single function.
+	It invokes a single function.
  
 	| Parameter | Description | Default |
 	| --- | --- | --- |
@@ -78,7 +78,7 @@ _____________________
 
  - **IbmPyWrenMapOperator**
 	
-	Invokes multiple parallel tasks, as many as how much data is in parameter `map_iterdata`. It applies the function `map_function` to every element in `map_iterdata`:
+	It invokes multiple parallel tasks, as many as how much data is in parameter `map_iterdata`. It applies the function `map_function` to every element in `map_iterdata`:
     
 	| Parameter | Description | Default | Type |
 	| ------------ | ------------- | ------ | ---- |
@@ -112,9 +112,9 @@ _____________________
 	[2, 3, 4]
 	```
 	
- - **IbmCloudFunctionsMapReduceOperator**
+ - **IbmPyWrenMapReduceOperator**
 	
-	Invokes multiple parallel tasks, as many as how much data is in parameter `map_iterdata`. It applies the function `map_function` to every element in `iterdata`. Finally, in invokes a `reduce_function` that gathers all the map results.
+	It invokes multiple parallel tasks, as many as how much data is in parameter `map_iterdata`. It applies the function `map_function` to every element in `iterdata`. Finally, in invokes a `reduce_function` that gathers all the map results.
     
 	| Parameter | Description | Default | Type |
 	| ------------ | ------------- | ------ | ---- |
@@ -162,7 +162,7 @@ _____________________
 	```
 
   ### Inherited parameters
-  All operators intherit a common PyWren operator that has the following parameters:
+  All operators inherit a common PyWren operator that has the following parameters:
   
   | Parameter | Description | Default | Type |
   | --- | --- | --- | --- |
