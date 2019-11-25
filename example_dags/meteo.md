@@ -8,7 +8,7 @@ The workflow consists in collecting different meteorological data (such as tempe
 
 #### Dataset
 - [Source](https://openweathermap.org)
-The dataset is a file containing 210000 JSON entries data with mateorological information of cities around the globe. The following sample is an example of the data for the city of Stockholm, Sweden, which is a single line of the dataset file:
+The dataset is a file containing 210000 JSON entries data with meteorological information of cities around the globe. The following sample is an example of the data for the city of Stockholm, Sweden, which is a single line of the dataset file:
 
 ```json
 {
@@ -125,9 +125,97 @@ parse_data = IbmPyWrenMapOperator(
 
 **3. Gather the parameter to plot and plot the data - MapReduce**
 
-First, it maps over the data grouped by country on the step before and selects only the attributes we want (for example, if we want to plot temperature, we only need temperature, latitude and longitude attributes).
-Then, it reduces the results by iterating over them and plotting each coordinate onto the map, seting the color accordingly.
-The final images are stored in COS.
+Finally, we need to gather all parsed data from the previous step, merge all chunks in the same list and then plot the data to the map. To do so, we will be using the MapReduce operator, which let us to first map a iterable data source and then reduce the results to one list. The map phase will consist on collecting the data from the previous map selecting only the attributes we want (for example, if we want to plot temperature, we only need temperature, latitude and longitude attributes). The reduce step consists on iterating over the mapped and merged results and scattering each coordinate onto the map, setting the color accordingly. We will be launching a MapReduce task for every country and for every attribute we want to plot. The final images are stored to COS.
+
+Map function:
+```python
+def get_plot_data(obj, country, bucket, plot):
+    samples = json.loads(obj.data_stream.read())
+
+    res_l = list()
+    for sample in samples:
+        sample_json = json.loads(sample)
+        res = dict()
+        # Get latitude and longitude attributes
+        res['lon'] = sample_json['city']['coord']['lon']
+        res['lat'] = sample_json['city']['coord']['lat']
+        # Get only the attribute we want to plot
+        if plot == 'temp':
+            res['temp'] = sample_json['main']['temp'] - 273
+        elif plot == 'humi':
+            res['humi'] = sample_json['main']['humidity']
+        elif plot == 'press':
+            res['press'] = sample_json['main']['pressure']
+        else:
+            raise Exception
+        res_l.append(res)
+    return res_l
+```
+Reduce function:
+```python
+def plot_temp(results, ibm_cos):
+    country = os.environ.get('country')
+    bucket = os.environ.get('bucket')
+    plot = os.environ.get('plot')
+
+    all_results = [item for sublist in results for item in sublist]
+    
+    llcrnrlon=min(all_results, key=lambda sample : sample['lon'])['lon']
+    llcrnrlat=min(all_results, key=lambda sample : sample['lat'])['lat']
+    urcrnrlon=max(all_results, key=lambda sample : sample['lon'])['lon']
+    urcrnrlat=max(all_results, key=lambda sample : sample['lat'])['lat']
+
+    lons = [sample['lon'] for sample in all_results]
+    lats = [sample['lat'] for sample in all_results]
+
+    fig = plt.gcf()
+    fig.set_size_inches(8, 6.5)
+
+    m = Basemap(
+        llcrnrlon=llcrnrlon,
+        llcrnrlat=llcrnrlat,
+        urcrnrlon=urcrnrlon,
+        urcrnrlat=urcrnrlat,
+        projection='merc',
+        resolution='h')
+    
+    x, y = m(lons, lats)
+
+    if plot == 'temp':
+        cmap = plt.get_cmap('coolwarm')
+        data = [sample['temp'] for sample in all_results]
+        plt.scatter(x, y, 2.5, alpha=0.5, c=data, zorder=2, cmap=cmap)
+        cbar = plt.colorbar()
+        cbar.ax.set_ylabel('Temperature (ºC)')
+        plt.title('{} temperature'.format(country))
+    elif plot == 'humi':
+        cmap = plt.get_cmap('Blues')
+        data = [sample['humi'] for sample in all_results]
+        plt.scatter(x, y, 2.5, alpha=0.5, c=data, zorder=2, cmap=cmap)
+        cbar = plt.colorbar()
+        cbar.ax.set_ylabel('Humidity (%)')
+        plt.title('{} humidity (%)'.format(country))
+    elif plot == 'press':
+        cmap = plt.get_cmap('seismic')
+        data = [sample['press'] for sample in all_results]
+        plt.scatter(x, y, 2.5, alpha=0.5, c=data, zorder=2, cmap=cmap)
+        cbar = plt.colorbar()
+        cbar.ax.set_ylabel('Pressure (hPa)')
+        plt.title('{} pressure (hPa)'.format(country))
+    else:
+        raise Exception()
+
+    m.drawcountries(color="black", zorder=3)
+    m.drawmapboundary(fill_color='cornflowerblue')
+    m.fillcontinents(color='moccasin', lake_color='cornflowerblue', zorder=1)
+    buff = BytesIO()
+    plt.savefig(buff, dpi=100)
+    buff.seek(0)
+
+    key = 'image_{}_{}.png'.format(country, plot)
+    ibm_cos.put_object(Bucket=bucket, Key=key, Body=buff)
+    return key
+```
 
 ```python
 for plot in plots:
