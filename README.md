@@ -123,8 +123,8 @@ _____________________
 	| reduce_function | Python callable. | _mandatory_ | `callable` |
 	| iterdata_form_task | Gets the input iterdata from another function's output | `None` | _Has to be iterable_ |
 	| extra_params | Adds extra key word arguments to map function's signature | `None` | `dict` |
-	| map_runtime_memory | Memory to use to run the map functions | Loaded from config | `intp` |
-	| reduce_runtime_memory | Memory to use to run the reduce function | Loaded from config | `intp` |
+	| map_runtime_memory | Memory to use to run the map functions | Loaded from config | `int` |
+	| reduce_runtime_memory | Memory to use to run the reduce function | Loaded from config | `int` |
 	| chunk_size | Splits the object in chunks, and every chunk gets this many bytes as input data (on invocation per chunk). 'None' for processing the whole file in one function activation | `None` | `int` |
 	| chunk_n | Splits the object in N chunks (on invocation per chunk). 'None' for processing the whole file in one function activation | `None` | `int` |
 	| remote_invocation | Activates pywren's remote invocation functionality | False | `bool` |
@@ -137,7 +137,7 @@ _____________________
 	def add(x, y):
 		return x + y
 		
-	def (results):
+	def mult_array(results):
 		result = 1
 		for n in results:
 			result *= 2
