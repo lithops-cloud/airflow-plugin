@@ -1,4 +1,3 @@
-
 # Copyright 2019
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +16,9 @@ from airflow.utils.decorators import apply_defaults
 from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
 
-from ibm_cloud_functions_airflow_plugin.hooks.ibm_pywren_hook import IbmPyWrenHook, EXECUTION_TIMEOUT
+from ..hooks.ibm_pywren_hook import IBMPyWrenHook
 
-class IbmPyWrenOperator(BaseOperator):
+class IBMPyWrenOperator(BaseOperator):
     ui_color = '#c4daff'
 
     @apply_defaults
@@ -31,7 +30,7 @@ class IbmPyWrenOperator(BaseOperator):
             clean_data: bool = False,
             extra_env=None,
             runtime_memory=256,
-            timeout=EXECUTION_TIMEOUT,
+            timeout=600,
             include_modules=[],
             exclude_modules=[],
             *args, **kwargs):
@@ -71,7 +70,7 @@ class IbmPyWrenOperator(BaseOperator):
         Executes function. Overrides 'execute' from BaseOperator.
         """
         # Initialize IBM Cloud Functions hook
-        self._executor = IbmPyWrenHook().get_conn(self.pywren_executor_config)
+        self._executor = IBMPyWrenHook().get_conn(self.pywren_executor_config)
 
         self._futures = self.execute_callable(context)
         self.log.info("Execution Done")
@@ -93,7 +92,7 @@ class IbmPyWrenOperator(BaseOperator):
     def execute_callable(self, context):
         raise NotImplementedError()
 
-class IbmPyWrenCallAsyncOperator(IbmPyWrenOperator):
+class IBMPyWrenCallAsyncOperator(IBMPyWrenOperator):
     def __init__(
             self, func, data={}, data_from_task={},
             **kwargs):
@@ -126,15 +125,13 @@ class IbmPyWrenCallAsyncOperator(IbmPyWrenOperator):
             include_modules=self.include_modules, 
             exclude_modules=self.exclude_modules)
 
-class IbmPyWrenMapOperator(IbmPyWrenOperator):
+class IBMPyWrenMapOperator(IBMPyWrenOperator):
     def __init__(
         self, map_function, map_iterdata,
         iterdata_from_task=None,
-        extra_params=None,
+        extra_args=None,
         chunk_size=None,
         chunk_n=None,
-        remote_invocation=False,
-        remote_invocation_groups=None,
         invoke_pool_threads=500,
         **kwargs):
         """
@@ -147,11 +144,9 @@ class IbmPyWrenMapOperator(IbmPyWrenOperator):
         self.map_function = map_function
         self.map_iterdata = map_iterdata
         self.iterdata_from_task = iterdata_from_task
-        self.extra_params = extra_params
+        self.extra_args = extra_args
         self.chunk_size = chunk_size
         self.chunk_n = chunk_n
-        self.remote_invocation = remote_invocation
-        self.remote_invocation_groups = remote_invocation_groups
         self.invoke_pool_threads = invoke_pool_threads
     
     def execute_callable(self, context):
@@ -166,31 +161,27 @@ class IbmPyWrenMapOperator(IbmPyWrenOperator):
         return self._executor.map(
             map_function=self.map_function,
             map_iterdata=self.map_iterdata,
-            extra_params=self.extra_params,
+            extra_args=self.extra_args,
             extra_env=self.extra_env,
             runtime_memory=self.runtime_memory,
             chunk_size=self.chunk_size,
             chunk_n=self.chunk_n,
-            remote_invocation=self.remote_invocation,
-            remote_invocation_groups=self.remote_invocation_groups,
             timeout=self.timeout,
             invoke_pool_threads=self.invoke_pool_threads,
             include_modules=self.include_modules,
             exclude_modules=self.exclude_modules)
 
 
-class IbmPyWrenMapReduceOperator(IbmPyWrenOperator):
+class IBMPyWrenMapReduceOperator(IBMPyWrenOperator):
     def __init__(
             self,
             map_function, map_iterdata, reduce_function, 
             iterdata_from_task=None,
-            extra_params=None, 
+            extra_args=None, 
             map_runtime_memory=None, 
             reduce_runtime_memory=None, 
             chunk_size=None, 
             chunk_n=None, 
-            remote_invocation=False, 
-            remote_invocation_groups=None, 
             reducer_one_per_object=False, 
             reducer_wait_local=False, 
             invoke_pool_threads=500,
@@ -207,13 +198,11 @@ class IbmPyWrenMapReduceOperator(IbmPyWrenOperator):
         self.map_iterdata = map_iterdata
         self.iterdata_from_task = iterdata_from_task
         self.reduce_function = reduce_function
-        self.extra_params = extra_params
+        self.extra_args = extra_args
         self.map_runtime_memory = map_runtime_memory
         self.reduce_runtime_memory = reduce_runtime_memory
         self.chunk_size = chunk_size
         self.chunk_n = chunk_n
-        self.remote_invocation = remote_invocation
-        self.remote_invocation_groups = remote_invocation_groups
         self.reducer_one_per_object = reducer_one_per_object
         self.reducer_wait_local = reducer_wait_local
         self.invoke_pool_threads = invoke_pool_threads
@@ -234,14 +223,12 @@ class IbmPyWrenMapReduceOperator(IbmPyWrenOperator):
             map_function=self.map_function,
             map_iterdata=self.map_iterdata,
             reduce_function=self.reduce_function,
-            extra_params=self.extra_params,
+            extra_args=self.extra_args,
             extra_env=self.extra_env,
             map_runtime_memory=self.map_runtime_memory,
             reduce_runtime_memory=self.reduce_runtime_memory,
             chunk_size=self.chunk_size,
             chunk_n=self.chunk_n,
-            remote_invocation=self.remote_invocation, 
-            remote_invocation_groups=self.remote_invocation_groups,
             timeout=self.timeout,
             reducer_one_per_object=self.reducer_one_per_object,
             reducer_wait_local=self.reducer_wait_local,

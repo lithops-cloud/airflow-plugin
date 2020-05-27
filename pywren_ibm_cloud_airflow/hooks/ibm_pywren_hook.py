@@ -1,11 +1,10 @@
 from airflow.hooks import BaseHook
 from airflow.exceptions import AirflowException
 
-from pywren_ibm_cloud.config import EXECUTION_TIMEOUT
 import pywren_ibm_cloud
 
 
-class IbmPyWrenHook(BaseHook):
+class IBMPyWrenHook(BaseHook):
 
     def __init__(self, conn_id='ibm_pywren_config'):
         """
