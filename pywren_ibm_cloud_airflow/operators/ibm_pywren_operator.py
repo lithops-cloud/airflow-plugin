@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from airflow.utils.decorators import apply_defaults
-from airflow.models import BaseOperator
+from airflow.models.baseoperator import BaseOperator
 from airflow.exceptions import AirflowException
 
 from ..hooks.ibm_pywren_hook import IBMPyWrenHook

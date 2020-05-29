@@ -21,16 +21,19 @@ import airflow
 
 from airflow.operators.dummy_operator import DummyOperator
 
-from airflow.operators.pywren_ibm_cloud_airflow import IBMPyWrenCallAsyncOperator
-from airflow.operators.pywren_ibm_cloud_airflow import IBMPyWrenMapOperator
-from airflow.operators.pywren_ibm_cloud_airflow import IBMPyWrenMapReduceOperator
+from airflow.operators.pywren_ibm_cloud_airflow import (
+    IBMPyWrenCallAsyncOperator,
+    IBMPyWrenMapOperator,
+    IBMPyWrenMapReduceOperator
+)
+
 
 from functions import manage_data, plot_map
 
 args = {
     'owner': 'airflow',
     'start_date': airflow.utils.dates.days_ago(2),
-    'provide_context' : True
+    'provide_context': True
 }
 
 countries = ['ES', 'PT', 'IT', 'DE', 'FR']
@@ -46,18 +49,19 @@ dag = airflow.models.DAG(
 get_dataset = IBMPyWrenCallAsyncOperator(
     task_id='get_dataset',
     func=manage_data.get_dataset,
-    data={'data_url' : 'http://bulk.openweathermap.org/sample/weather_16.json.gz', 'bucket' : bucket},
+    data={'data_url': 'http://bulk.openweathermap.org/sample/weather_16.json.gz',
+          'bucket': bucket},
     dag=dag,
 )
 
 parse_data = IBMPyWrenMapOperator(
-        task_id='parse_data',
-        map_function=manage_data.parse_data,
-        map_iterdata='cos://{}/weather_data'.format(bucket),
-        chunk_size=1024**2,
-        extra_args=[countries, bucket],
-        dag=dag
-    )
+    task_id='parse_data',
+    map_function=manage_data.parse_data,
+    map_iterdata='cos://{}/weather_data'.format(bucket),
+    chunk_size=1024**2,
+    extra_args=[countries, bucket],
+    dag=dag
+)
 
 get_dataset >> parse_data
 
@@ -66,13 +70,13 @@ for plot in plots:
         plot_task = IBMPyWrenMapReduceOperator(
             task_id='{}_plot_{}'.format(country, plot),
             pywren_executor_config={
-                'runtime_memory' : 2048,
-                'runtime' : 'aitorarjona/python3.6_pywren_matplotlib-basemap:1.0'},
+                'runtime_memory': 2048,
+                'runtime': 'aitorarjona/python3.6_pywren_matplotlib-basemap:1.0'},
             map_function=manage_data.get_plot_data,
             map_iterdata='cos://{}/{}/'.format(bucket, country),
             reduce_function=plot_map.plot_temp,
             extra_args=[country, bucket, plot],
-            extra_env={'country' : country, 'bucket' : bucket, 'plot' : plot},
+            extra_env={'country': country, 'bucket': bucket, 'plot': plot},
             dag=dag)
-            
+
         parse_data >> plot_task
