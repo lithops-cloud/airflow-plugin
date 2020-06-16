@@ -21,32 +21,28 @@ import airflow
 
 from airflow.operators.dummy_operator import DummyOperator
 
-from airflow.operators.pywren_ibm_cloud_airflow import (
-    IBMPyWrenCallAsyncOperator,
-    IBMPyWrenMapOperator,
-    IBMPyWrenMapReduceOperator
+from airflow.operators.cloudbutton_airflow_plugin import (
+    CloudbuttonCallAsyncOperator,
+    CloudbuttonMapOperator,
+    CloudbuttonMapReduceOperator
 )
 
 
 from functions import manage_data, plot_map
 
-args = {
-    'owner': 'airflow',
-    'start_date': airflow.utils.dates.days_ago(2),
-    'provide_context': True
-}
+args = {'owner': 'airflow',
+        'start_date': airflow.utils.dates.days_ago(2),
+        'provide_context': True}
 
 countries = ['ES', 'PT', 'IT', 'DE', 'FR']
 plots = ['temp', 'humi', 'press']
 bucket = 'aitor-data'
 
-dag = airflow.models.DAG(
-    dag_id='pywren_weather_example',
-    default_args=args,
-    schedule_interval=None,
-)
+dag = airflow.models.DAG(dag_id='pywren_weather_example',
+                         default_args=args,
+                         schedule_interval=None)
 
-get_dataset = IBMPyWrenCallAsyncOperator(
+get_dataset = CloudbuttonCallAsyncOperator(
     task_id='get_dataset',
     func=manage_data.get_dataset,
     data={'data_url': 'http://bulk.openweathermap.org/sample/weather_16.json.gz',
@@ -54,7 +50,7 @@ get_dataset = IBMPyWrenCallAsyncOperator(
     dag=dag,
 )
 
-parse_data = IBMPyWrenMapOperator(
+parse_data = CloudbuttonMapOperator(
     task_id='parse_data',
     map_function=manage_data.parse_data,
     map_iterdata='cos://{}/weather_data'.format(bucket),
@@ -67,7 +63,7 @@ get_dataset >> parse_data
 
 for plot in plots:
     for country in countries:
-        plot_task = IBMPyWrenMapReduceOperator(
+        plot_task = CloudbuttonMapReduceOperator(
             task_id='{}_plot_{}'.format(country, plot),
             pywren_executor_config={
                 'runtime_memory': 2048,

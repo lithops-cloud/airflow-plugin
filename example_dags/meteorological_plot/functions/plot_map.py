@@ -1,12 +1,12 @@
-import matplotlib.pyplot as plt
-import json
-import os
-import numpy as np
-
-from mpl_toolkits.basemap import Basemap
-from io import BytesIO
-
 def plot_temp(results, ibm_cos):
+    import matplotlib.pyplot as plt
+    import json
+    import os
+    import numpy as np
+    
+    from mpl_toolkits.basemap import Basemap
+    from io import BytesIO
+    
     country = os.environ.get('country')
     bucket = os.environ.get('bucket')
     plot = os.environ.get('plot')
