@@ -2,6 +2,9 @@
 ## Installation
 **Note:** These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
+
+TODO: Wait for cloudbutton toolkit to be available in PyPi
+
 ### Initial requirements
 In order to execute functions on IBM Cloud using PyWren, the following requirements are needed:
 
@@ -17,33 +20,21 @@ Use `pip` to install the last stable version of Apache Airflow.
 $ pip install apache-airflow
 ```
 
-### Installing IBM Cloud Functions Plugin
+### Installing Cloudbutton Plugin
 
-Move to Airflow home directory. The default location is `~/airflow`:
+You can simply install the pugin using the setup.py script:
 
-`$ cd ~/airflow`
+`$ python3 setup.py install --user`
 
-Create the `plugins` directory, and cd into it:
+Alternatively, you can move the module into airflow's plugin folder:
 
-`$ mkdir plugins`
+`$ cp -r cloudbutton_airflow_plugin ~/airflow/plugins`
 
-`$ cd plugins`
-
-Clone the plugin repository into it:
-
-`$ git clone https://github.com/aitorarjona/ibm-pywren_airflow-plugin`
-
-This plugin needs IBM-Cloud PyWren. It can be installed using `pip`:
-
-`$ pip install pywren-ibm-cloud`
+Note: Only one of the two options above descripted has to be done.
 
 _Optional_: Move the example DAGs provided to the `dags` folder:
 
-`$ mv example_dags ~/airflow/dags/`
-
-Don't forget to remove the `example-dags` folder or move it to the Airflow's dag folder (`~/airflow/dags/`):
-
-`$ rm -r example_dags` 
+`$ cp -r example_dags ~/airflow/dags/`
 
 ### Airflow Setup
 
@@ -60,17 +51,19 @@ airflow scheduler
 
 ### Create PyWren config in Airflow's connections
 
+By default, Cloudbutton plugin will use the configuraton file provided in the home directory.
+
+However, using Airflow connections it is possible define another configuration specificaly for the Airflow plugin:
+
 Navigate to `localhost:8080` on your browser.
 
 ![enter image description here](https://i.ibb.co/rdWGC5Q/5.jpg)
 
-
-
-Type **ibm_pywren_config** inside the 'Conn Id' text box.
-Then, paste the following configuration in the 'Extra' text box:
+Type **cloudbutton_engine_config** inside the 'Conn Id' text box.
+Then, paste a custom Cloudbutton configuration in JSON format into the 'Extra' text box, for example:
 
 ```python
-{"pywren" : {"storage_bucket" : "BUCKET_NAME"},
+{"cloudbutton" : {"storage_bucket" : "BUCKET_NAME"},
 
 "ibm_cf":  {"endpoint": "https://example.functions.cloud.ibm.com", 
             "namespace": "NAMESPACE", 
@@ -79,10 +72,6 @@ Then, paste the following configuration in the 'Extra' text box:
 "ibm_cos": {"endpoint": "http://example.cloud-object-storage.appdomain.cloud", 
             "api_key": "API_KEY"}}
 ```
-
-Please, fill in your credentials. Information of your Cloud Functions information can be found [here](https://cloud.ibm.com/openwhisk/namespace-settings), and for your Cloud Object Storage [here](https://cloud.ibm.com/objectstorage/crn%3Av1%3Abluemix%3Apublic%3Acloud-object-storage%3Aglobal%3Aa%2F827fd5191c5d42fd9a719542dffeb22e%3Aec0fe42c-4100-4d60-8c48-310c8624c311%3A%3A?paneId=credentials). The `storage_bucket` is the COS bucket where PyWren will save/load the data needed to run the functions. Make sure to have a bucket created and put its name in that field. This bucket needs to be in the same region as the funcions namespace.
-
-**Important: maintain the values inside double quotation marks.**
 
 ![enter image description here](https://i.ibb.co/4Z9KKg8/6.jpg)
 
