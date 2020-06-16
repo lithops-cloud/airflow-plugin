@@ -1,35 +1,29 @@
-# IBM PyWren: Apache Airflow Plugin
+# Cloudbutton Apache Airflow Plugin
 
-This repository contains an Apache Airflow Plugin that provides new operators to easily deploy serverless functions tasks on IBM Cloud Functions. 
-IBM-Cloud PyWren offers the possibility to easily deploy map and map reduce jobs that can compute large amount of data from IBM Cloud Object Storage using thousands of parallel serverless functions. 
-This plugin includes three new operators to easily unload the heavy work in your DAGs related to data computation, that otherwise would be executed in the Airflow cluster, by moving them to serverless functions.
+This repository contains an Apache Airflow Plugin that implements new operators to easily deploy serverless functions tasks on IBM Cloud Functions.
+Cloudbutton toolkit is a Python multicloud library for running serverless jobs. Cloudbutton toolkit interfaces Python's multiprocessing module to transparently run processes over serverless functions as if they were executed localy. This plugin benefits from this library to run highly parallelizable Airflow tasks as serverless functions, achieving higher performance for big data analysis workflows whithout consuming all the resources of the cluser where Airflow is running on.
 
 - Apache Airflow: https://github.com/apache/airflow
-- PyWren IBM Cloud: https://github.com/pywren/pywren-ibm-cloud
+- Cloudbutton toolkit: https://github.com/cloudbutton/cloudbutton
 - CloudButton Project: http://cloudbutton.eu/
-
-
-✓ Tested on *Airflow v1.10.3* and *IBM-PyWren 1.1.2*
-
 
 ## Contents
 
-1. [Installation](https://github.com/aitorarjona/ibm-pywren_airflow-plugin/blob/dev/INSTALL.md)
+1. [Installation](https://github.com/cloudbutton/airflow-plugin/blob/master/INSTALL.md)
 2. [Usage](#usage)
-3. [Examples](https://github.com/aitorarjona/ibm-pywren_airflow-plugin/tree/dev/example_dags)
+3. [Examples](https://github.com/cloudbutton/airflow-plugin/tree/master/example_dags)
 
 ## Usage
 
 ### Operators
 
 This plugin provides three new operators.
+
 _____________________
-**All operators support IBM-PyWren functionalities, such as mapping over a bucket, or splitting a COS object in several chunks. For more details please refer to the [IBM-PyWren documentation](https://github.com/pywren/pywren-ibm-cloud).**
-_____________________
-**Important note:** Functions must be declared outside the DAG, in a single module or within a directory. To access the functions inside the DAG, import them as regular modules.
+**Important note:** Due to the way Airflow manages DAGs, the callables passed to the Cloudbutton operators can not be declared in the DAG definition script. Instead, they must be declared inside a separate file or module. To access the functions from the DAG file, import them as regular modules.
 _____________________
 
- - **IbmPyWrenCallAsyncOperator**
+ - **CloudbuttonCallAsyncOperator**
 	
 	It invokes a single function.
  
@@ -47,9 +41,9 @@ _____________________
 	
 	```python
 	import echo from my_functions
-	basic_task = IbmPyWrenCallAsyncOperator(
-	    task_id='add_task_1',
-	    func=echo,
+	my_task = CloudbuttonCallAsyncOperator(
+	    task_id='add_task',
+	    func=add,
 	    data={'x' : 1, 'y' : 3},
 	    dag=dag,
 	)
@@ -62,7 +56,7 @@ _____________________
 	
 	```python
 	import echo from my_functions
-	basic_task = IbmPyWrenCallAsyncOperator(
+	basic_task = CloudbuttonAsyncOperator(
 	    task_id='add_task_2',
 	    func=echo,
 	    data={'x' : 4},
@@ -76,7 +70,7 @@ _____________________
 	8
 	```
 
- - **IbmPyWrenMapOperator**
+ - **CloudbuttonMapOperator**
 	
 	It invokes multiple parallel tasks, as many as how much data is in parameter `map_iterdata`. It applies the function `map_function` to every element in `map_iterdata`:
     
@@ -99,7 +93,7 @@ _____________________
 	
 	```python
 	from my_functions import add
-	map_task = IbmCloudFunctionsMapOperator(
+	map_task = CloudbuttonMapOperator(
 	    task_id='map_task',
 	    map_function=add,
 	    map_iterdata=[1, 2, 3],
@@ -112,9 +106,9 @@ _____________________
 	[2, 3, 4]
 	```
 	
- - **IbmPyWrenMapReduceOperator**
+ - **CloudbuttonMapReduceOperator**
 	
-	It invokes multiple parallel tasks, as many as how much data is in parameter `map_iterdata`. It applies the function `map_function` to every element in `iterdata`. Finally, in invokes a `reduce_function` that gathers all the map results.
+	It invokes multiple parallel tasks, as many as how much data is in parameter `map_iterdata`. It applies the function `map_function` to every element in `iterdata`. Finally, a single `reduce_function` is invoked that gathers all the map results.
     
 	| Parameter | Description | Default | Type |
 	| ------------ | ------------- | ------ | ---- |
@@ -147,7 +141,7 @@ _____________________
 	```python
 	from my_functions import add
 	from my_functions import mult
-	mapreduce_task = IbmCloudFunctionsMapReduceOperator(
+	mapreduce_task = CloudbuttonMapReduceOperator(
 	    task_id='mapreduce_task',
 	    map_function=add,
 	    reduce_funtion=mul,
@@ -166,7 +160,7 @@ _____________________
   
   | Parameter | Description | Default | Type |
   | --- | --- | --- | --- |
-  | pywren_executor_config | Pywren executor config, as a dictionary | `{}` | `dict` |
+  | cloudbutton_engine_config | Cloudbutton engine config, as a dictionary | `{}` | `dict` |
   | wait_for_result | Waits for function/functions completion | `True` | `bool` |
   | fetch_result | Downloads function/functions results upon completion | `True` | `bool` |
   | clean_data | Deletes PyWren metadata from COS | `False` | `bool` |
