@@ -56,7 +56,7 @@ _____________________
 	
 	```python
 	import echo from my_functions
-	basic_task = IbmPyWrenCallAsyncOperator(
+	basic_task = CloudbuttonAsyncOperator(
 	    task_id='add_task_2',
 	    func=echo,
 	    data={'x' : 4},
@@ -93,7 +93,7 @@ _____________________
 	
 	```python
 	from my_functions import add
-	map_task = IbmCloudFunctionsMapOperator(
+	map_task = CloudbuttonMapOperator(
 	    task_id='map_task',
 	    map_function=add,
 	    map_iterdata=[1, 2, 3],
@@ -141,7 +141,7 @@ _____________________
 	```python
 	from my_functions import add
 	from my_functions import mult
-	mapreduce_task = IbmCloudFunctionsMapReduceOperator(
+	mapreduce_task = CloudbuttonMapReduceOperator(
 	    task_id='mapreduce_task',
 	    map_function=add,
 	    reduce_funtion=mul,
