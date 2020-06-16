@@ -1,16 +1,11 @@
 
 ## Installation
-**Note:** These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
-
-
-TODO: Wait for cloudbutton toolkit to be available in PyPi
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Initial requirements
-In order to execute functions on IBM Cloud using PyWren, the following requirements are needed:
+The Cloudbutton toolkit package must be installed in the same Python environment used to run Airflow:
 
-- An IBM Cloud Functions [account](https://cloud.ibm.com/openwhisk/). 
-- An IBM Cloud Object Storage [account](https://www.ibm.com/cloud/object-storage).
-- Python 3.5 or newer.
+- [Cloudbutton toolkit](https://github.com/cloudbutton/cloudbutton)
 
 ### Installing Apache Airflow
 
@@ -22,19 +17,23 @@ $ pip install apache-airflow
 
 ### Installing Cloudbutton Plugin
 
-You can simply install the pugin using the setup.py script:
+There are two alternatives to install the Cloudbutton toolkit plugin. Choose one:
 
-`$ python3 setup.py install --user`
+- Install the pugin using the setup.py script:
+```
+$ python3 setup.py install --user
+```
 
-Alternatively, you can move the module into airflow's plugin folder:
-
-`$ cp -r cloudbutton_airflow_plugin ~/airflow/plugins`
+- Move the module into Airflow's plugin folder:
+```
+$ cp -r cloudbutton_airflow_plugin ~/airflow/plugins
+```
 
 Note: Only one of the two options above descripted has to be done.
 
 _Optional_: Move the example DAGs provided to the `dags` folder:
 
-`$ cp -r example_dags ~/airflow/dags/`
+`$ cp -r example_dags/meteorological_plot ~/airflow/dags/`
 
 ### Airflow Setup
 
@@ -49,7 +48,7 @@ airflow webserver -p 8080
 airflow scheduler
 ```
 
-### Create PyWren config in Airflow's connections
+### Configure Cloudbutton toolkit as a Airflow connection (optional)
 
 By default, Cloudbutton plugin will use the configuraton file provided in the home directory.
 
