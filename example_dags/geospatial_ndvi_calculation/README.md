@@ -5,6 +5,7 @@ TODO
 ![image](images/ndvi.png?raw=true "NDVI")
 
 Thanks to Airflow extensibility using the operator abstraction and centralized storage such as S3, we can now seamlessly mix serverful and serverless tasks in the same workflow. In this case, we are using AWS Batch operator to run a task that requires more memory and time that a serverless function can provide, so they are executed transparently in Docker containers that run on EC2 instances without memory or time constraints. The rest of the tasks are short and light memory-wise, so they can be executed as serverless functions using Cloudbutton toolkit.
+
 In addition, Airflow allows as to benefit from great workflow fault tolerance, logging, and observability features. One key concept of Airflow is its "configuration as code" paradigm used to compose DAGs as a Python script, which is very convenient to design and maintain a complex scientific workflow. Finally, Airflow GUI makes it comfortable to schedule and monitor DAG runs.
 
 ## Setup
