@@ -40,7 +40,7 @@ _____________________
 	```
 	
 	```python
-	import echo from my_functions
+	from my_functions import add
 	my_task = CloudbuttonCallAsyncOperator(
 	    task_id='add_task',
 	    func=add,
@@ -55,10 +55,10 @@ _____________________
 	```
 	
 	```python
-	import echo from my_functions
+	from my_functions import add
 	basic_task = CloudbuttonAsyncOperator(
 	    task_id='add_task_2',
-	    func=echo,
+	    func=add,
 	    data={'x' : 4},
 	    data_from_task={'y' : 'add_task_1'},
 	    dag=dag,
@@ -139,8 +139,7 @@ _____________________
 	```
 	
 	```python
-	from my_functions import add
-	from my_functions import mult
+	from my_functions import add, mult
 	mapreduce_task = CloudbuttonMapReduceOperator(
 	    task_id='mapreduce_task',
 	    map_function=add,

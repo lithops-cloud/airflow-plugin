@@ -1,4 +1,5 @@
 # Examples
 
 ### Available examples:
- - [Plotting meteorological data with matplotlib](https://github.com/aitorarjona/ibm-pywren_airflow-plugin/blob/dev/example_dags/meteo.md)
+ - [Plotting meteorological data with matplotlib](meteorological_plot)
+ - [NDVI Calculation Workflow (Cloudbutton H2020 Geospatial Usecase)](geospatial_ndvi_calculation)
