@@ -3,9 +3,9 @@
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Initial requirements
-The Cloudbutton toolkit package must be installed in the same Python environment used to run Airflow:
+The Lithops package must be installed in the same Python environment used to run Airflow:
 
-- [Cloudbutton toolkit](https://github.com/cloudbutton/cloudbutton)
+- [Lithops](https://github.com/lithops-cloud/lithops)
 
 ### Installing Apache Airflow
 
@@ -15,9 +15,9 @@ Use `pip` to install the last stable version of Apache Airflow.
 $ pip install apache-airflow
 ```
 
-### Installing Cloudbutton Plugin
+### Installing Lithops Plugin
 
-There are two alternatives to install the Cloudbutton toolkit plugin. Choose one:
+There are two alternatives to install the Lithops plugin. Choose one:
 
 - Install the pugin using the setup.py script:
 ```
@@ -26,7 +26,7 @@ $ python3 setup.py install --user
 
 - Move the module into Airflow's plugin folder:
 ```
-$ cp -r cloudbutton_airflow_plugin ~/airflow/plugins
+$ cp -r lithops_airflow_plugin ~/airflow/plugins
 ```
 
 Note: Only one of the two options above descripted has to be done.
@@ -48,9 +48,9 @@ airflow webserver -p 8080
 airflow scheduler
 ```
 
-### Configure Cloudbutton toolkit as a Airflow connection (optional)
+### Configure Lithops as a Airflow connection (optional)
 
-By default, Cloudbutton plugin will use the configuraton file provided in the home directory.
+By default, Lithops plugin will use the configuraton file provided in the home directory.
 
 However, using Airflow connections it is possible define another configuration specificaly for the Airflow plugin:
 
@@ -58,11 +58,11 @@ Navigate to `localhost:8080` on your browser.
 
 ![enter image description here](https://i.ibb.co/rdWGC5Q/5.jpg)
 
-Type **cloudbutton_engine_config** inside the 'Conn Id' text box.
-Then, paste a custom Cloudbutton configuration in JSON format into the 'Extra' text box, for example:
+Type **lithops_engine_config** inside the 'Conn Id' text box.
+Then, paste a custom Lithops configuration in JSON format into the 'Extra' text box, for example:
 
 ```python
-{"cloudbutton" : {"storage_bucket" : "BUCKET_NAME"},
+{"lithops" : {"storage_bucket" : "BUCKET_NAME"},
 
 "ibm_cf":  {"endpoint": "https://example.functions.cloud.ibm.com", 
             "namespace": "NAMESPACE", 
