@@ -29,7 +29,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/lithops/airflow-plugin",
     install_requires=[
-        "lithops>=1.5.2 "
+        "lithops>=2.0.0 "
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
