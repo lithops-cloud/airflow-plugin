@@ -1,4 +1,5 @@
-# Copyright 2019
+#
+# Copyright Cloudlab URV 2020
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,20 +12,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 from airflow.utils.decorators import apply_defaults
 from airflow.models.baseoperator import BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.operators.python_operator import PythonOperator
-from cloudbutton_airflow_plugin.hooks.cloudbutton_toolkit_hook import CloudbuttonToolkitHook
+from lithops_airflow_plugin.hooks.lithops_hook import LithopsHook
 
 
-class CloudbuttonOperator(BaseOperator):
+class LithopsOperator(BaseOperator):
     ui_color = '#c4daff'
 
     @apply_defaults
     def __init__(self,
-                 cloudbutton_engine_config: dict = {},
+                 lithops_config: dict = {},
                  wait_for_result: bool = True,
                  fetch_result: bool = True,
                  clean_data: bool = False,
@@ -35,7 +37,7 @@ class CloudbuttonOperator(BaseOperator):
                  exclude_modules=[],
                  *args, **kwargs):
         """
-        Abstract base clase for Cloudbutton operators. Initializes common variables.
+        Abstract base clase for lithops operators. Initializes common variables.
         :param map_function Map function callable.
         :param reduce_function Reduce function callable.
         :param op_args Key word arguments for function.
@@ -47,7 +49,7 @@ class CloudbuttonOperator(BaseOperator):
         object storage
         """
 
-        self.cloudbutton_engine_config = cloudbutton_engine_config
+        self.lithops_config = lithops_config
         self.wait_for_result = wait_for_result
         self.fetch_result = fetch_result
         self.clean_data = clean_data
@@ -69,8 +71,8 @@ class CloudbuttonOperator(BaseOperator):
         """
         Executes function. Overrides 'execute' from BaseOperator.
         """
-        # Initialize Cloudbutton engine hook
-        self._executor = CloudbuttonToolkitHook().get_conn(self.cloudbutton_engine_config)
+        # Initialize lithops hook
+        self._executor = LithopsHook().get_conn(self.lithops_config)
 
         self._futures = self.execute_callable(context)
         self.log.info("Execution Done")
@@ -93,7 +95,7 @@ class CloudbuttonOperator(BaseOperator):
         raise NotImplementedError()
 
 
-class CloudbuttonCallAsyncOperator(CloudbuttonOperator):
+class LithopsCallAsyncOperator(LithopsOperator):
     def __init__(self, func, data={}, data_from_task={}, **kwargs):
         """
         Executes an asyncronoys single function execution.
@@ -109,8 +111,8 @@ class CloudbuttonCallAsyncOperator(CloudbuttonOperator):
 
     def execute_callable(self, context):
         """
-        Overrides 'execute_callable' from CloudbuttonOperator.
-        Wrap of cloudbutton engine call async function.
+        Overrides 'execute_callable' from LithopsOperator.
+        Wrap of Lithops call async function.
         """
         for k, v in self.data_from_task.items():
             self.data[k] = context['task_instance'].xcom_pull(task_ids=v)
@@ -124,7 +126,7 @@ class CloudbuttonCallAsyncOperator(CloudbuttonOperator):
                                          exclude_modules=self.exclude_modules)
 
 
-class CloudbuttonMapOperator(CloudbuttonOperator):
+class LithopsMapOperator(LithopsOperator):
     def __init__(self,
                  map_function,
                  map_iterdata=None,
@@ -156,7 +158,7 @@ class CloudbuttonMapOperator(CloudbuttonOperator):
     def execute_callable(self, context):
         """
         Overrides 'execute_callable' from IbmPyWrenOperator.
-        Wrap of cloudbutton engine map function.
+        Wrap of Lithops map function.
         """
         if self.iterdata_from_task is not None:
             if isinstance(self.iterdata_from_task, dict):
@@ -182,7 +184,7 @@ class CloudbuttonMapOperator(CloudbuttonOperator):
                                   exclude_modules=self.exclude_modules)
 
 
-class CloudbuttonMapReduceOperator(CloudbuttonOperator):
+class LithopsMapReduceOperator(LithopsOperator):
     def __init__(
             self,
             map_function, reduce_function,
@@ -228,7 +230,7 @@ class CloudbuttonMapReduceOperator(CloudbuttonOperator):
     def execute_callable(self, context):
         """
         Overrides 'execute_callable' from IbmCloudFunctionsOperator.
-        Wrap of cloudbutton engine map reduce function.
+        Wrap of Lithops map reduce function.
         """
         if self.iterdata_from_task is not None:
             if isinstance(self.iterdata_from_task, dict):

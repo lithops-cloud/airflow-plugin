@@ -1,17 +1,15 @@
-# Cloudbutton Apache Airflow Plugin
+# Lithops - Apache Airflow Plugin
 
-This repository contains an Apache Airflow Plugin that implements new operators to easily deploy serverless functions tasks on IBM Cloud Functions.
-Cloudbutton toolkit is a Python multicloud library for running serverless jobs. Cloudbutton toolkit interfaces Python's multiprocessing module to transparently run processes over serverless functions as if they were executed localy. This plugin benefits from this library to run highly parallelizable Airflow tasks as serverless functions, achieving higher performance for big data analysis workflows whithout consuming all the resources of the cluser where Airflow is running on.
+This repository contains an Apache Airflow Plugin that implements new operators to easily deploy serverless functions tasks on Lithops.
+Lithops is a Python multicloud library for running serverless jobs. Litops interfaces Python's multiprocessing module to transparently run processes over serverless functions as if they were executed localy. This plugin benefits from this library to run highly parallelizable Airflow tasks as serverless functions, achieving higher performance for big data analysis workflows whithout consuming all the resources of the cluser where Airflow is running on.
 
 - Apache Airflow: https://github.com/apache/airflow
-- Cloudbutton toolkit: https://github.com/cloudbutton/cloudbutton
-- CloudButton Project: http://cloudbutton.eu/
 
 ## Contents
 
-1. [Installation](https://github.com/cloudbutton/airflow-plugin/blob/master/INSTALL.md)
+1. [Installation](https://github.com/lithops/airflow-plugin/blob/master/INSTALL.md)
 2. [Usage](#usage)
-3. [Examples](https://github.com/cloudbutton/airflow-plugin/tree/master/example_dags)
+3. [Examples](https://github.com/lithops/airflow-plugin/tree/master/example_dags)
 
 ## Usage
 
@@ -20,10 +18,10 @@ Cloudbutton toolkit is a Python multicloud library for running serverless jobs. 
 This plugin provides three new operators.
 
 _____________________
-**Important note:** Due to the way Airflow manages DAGs, the callables passed to the Cloudbutton operators can not be declared in the DAG definition script. Instead, they must be declared inside a separate file or module. To access the functions from the DAG file, import them as regular modules.
+**Important note:** Due to the way Airflow manages DAGs, the callables passed to the Lithops operators can not be declared in the DAG definition script. Instead, they must be declared inside a separate file or module. To access the functions from the DAG file, import them as regular modules.
 _____________________
 
- - **CloudbuttonCallAsyncOperator**
+ - **LithopsCallAsyncOperator**
 	
 	It invokes a single function.
  
@@ -41,7 +39,7 @@ _____________________
 	
 	```python
 	from my_functions import add
-	my_task = CloudbuttonCallAsyncOperator(
+	my_task = LithopsCallAsyncOperator(
 	    task_id='add_task',
 	    func=add,
 	    data={'x' : 1, 'y' : 3},
@@ -56,7 +54,7 @@ _____________________
 	
 	```python
 	from my_functions import add
-	basic_task = CloudbuttonAsyncOperator(
+	basic_task = LithopsCallAsyncOperator(
 	    task_id='add_task_2',
 	    func=add,
 	    data={'x' : 4},
@@ -70,7 +68,7 @@ _____________________
 	8
 	```
 
- - **CloudbuttonMapOperator**
+ - **LithopsMapOperator**
 	
 	It invokes multiple parallel tasks, as many as how much data is in parameter `map_iterdata`. It applies the function `map_function` to every element in `map_iterdata`:
     
@@ -93,7 +91,7 @@ _____________________
 	
 	```python
 	from my_functions import add
-	map_task = CloudbuttonMapOperator(
+	map_task = LithopsMapOperator(
 	    task_id='map_task',
 	    map_function=add,
 	    map_iterdata=[1, 2, 3],
@@ -106,7 +104,7 @@ _____________________
 	[2, 3, 4]
 	```
 	
- - **CloudbuttonMapReduceOperator**
+ - **LithopsMapReduceOperator**
 	
 	It invokes multiple parallel tasks, as many as how much data is in parameter `map_iterdata`. It applies the function `map_function` to every element in `iterdata`. Finally, a single `reduce_function` is invoked that gathers all the map results.
     
@@ -140,7 +138,7 @@ _____________________
 	
 	```python
 	from my_functions import add, mult
-	mapreduce_task = CloudbuttonMapReduceOperator(
+	mapreduce_task = LithopsMapReduceOperator(
 	    task_id='mapreduce_task',
 	    map_function=add,
 	    reduce_funtion=mul,
@@ -159,7 +157,7 @@ _____________________
   
   | Parameter | Description | Default | Type |
   | --- | --- | --- | --- |
-  | cloudbutton_engine_config | Cloudbutton engine config, as a dictionary | `{}` | `dict` |
+  | lithops_config | Lithops config, as a dictionary | `{}` | `dict` |
   | wait_for_result | Waits for function/functions completion | `True` | `bool` |
   | fetch_result | Downloads function/functions results upon completion | `True` | `bool` |
   | clean_data | Deletes PyWren metadata from COS | `False` | `bool` |
