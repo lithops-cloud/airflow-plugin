@@ -1,7 +1,8 @@
 # Lithops - Apache Airflow Plugin
 
-This repository contains an Apache Airflow Plugin that implements new operators to easily deploy serverless functions tasks on Lithops.
-Lithops is a Python multicloud library for running serverless jobs. Litops interfaces Python's multiprocessing module to transparently run processes over serverless functions as if they were executed localy. This plugin benefits from this library to run highly parallelizable Airflow tasks as serverless functions, achieving higher performance for big data analysis workflows whithout consuming all the resources of the cluser where Airflow is running on.
+This repository contains an Apache Airflow Plugin that implements new operators to easily deploy serverless functions tasks using Lithops.
+
+Lithops is a Python multicloud library for running serverless jobs. Litops transparently runs local sequential code over thousands of serverless functions. This plugin allows Airflow to benefit from serverless functions to achieve higher performance for highly parallelizable tasks such as big data analysis workflows whithout consuming all the resources of the cluser where Airflow is running on or without having to provision Airflow workers using Celery executor.
 
 - Apache Airflow: https://github.com/apache/airflow
 
@@ -158,8 +159,8 @@ _____________________
   | Parameter | Description | Default | Type |
   | --- | --- | --- | --- |
   | lithops_config | Lithops config, as a dictionary | `{}` | `dict` |
-  | wait_for_result | Waits for function/functions completion | `True` | `bool` |
-  | fetch_result | Downloads function/functions results upon completion | `True` | `bool` |
+  | async_invoke | Invokes functions asynchronously, does not wait to function completion | `False` | `bool` |
+  | get_result | Downloads  results upon completion | `True` | `bool` |
   | clean_data | Deletes PyWren metadata from COS | `False` | `bool` |
   | extra_env | Adds environ variables to function's runtime | `None` | `dict` |
   | runtime_memory | Runtime memory, in MB | `256` | `int` |

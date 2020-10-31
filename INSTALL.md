@@ -33,7 +33,7 @@ Note: Only one of the two options above descripted has to be done.
 
 _Optional_: Move the example DAGs provided to the `dags` folder:
 
-`$ cp -r example_dags/meteorological_plot ~/airflow/dags/`
+`$ cp example_dags/example/* ~/airflow/dags/`
 
 ### Airflow Setup
 
@@ -50,7 +50,7 @@ airflow scheduler
 
 ### Configure Lithops as a Airflow connection (optional)
 
-By default, Lithops plugin will use the configuraton file provided in the home directory.
+By default, Lithops plugin will use the configuraton file provided in the home directory (Please refer to Lithops official configuration documentation).
 
 However, using Airflow connections it is possible define another configuration specificaly for the Airflow plugin:
 
