@@ -26,39 +26,48 @@ class LithopsOperator(BaseOperator):
 
     @apply_defaults
     def __init__(self,
-                 lithops_config: dict = {},
-                 wait_for_result: bool = True,
-                 fetch_result: bool = True,
-                 clean_data: bool = False,
-                 extra_env=None,
-                 runtime_memory=256,
-                 timeout=600,
-                 include_modules=[],
-                 exclude_modules=[],
+                 type: str = None,
+                 config: dict = None,
+                 backend: str = None,
+                 storage: str = None,
+                 runtime: str = None,
+                 runtime_memory: int = None,
+                 rabbitmq_monitor: bool = None,
+                 workers: int = None,
+                 remote_invoker: bool = None,
+                 async_invoke: bool = False,
+                 get_result: bool = True,
                  *args, **kwargs):
         """
-        Abstract base clase for lithops operators. Initializes common variables.
-        :param map_function Map function callable.
-        :param reduce_function Reduce function callable.
-        :param op_args Key word arguments for function.
-        :param wait_for_result If set to True, execution blocks until
-        all functions are completed.
-        :param fetch_results If set to True, the results of the functions will be
-        pushed to local xcom 
-        :param clean_data If set to True, PyWren metadata will be removed from 
-        object storage
+        Wrapper around Lithops FunctionExecutor
+        :param type Type of executor, one of ['serverless', 'localhost', 'standalone'] 
+        :param config Lithops config. None to load from file or from Airflow connections config.
+        :param backend Compute backend to use.
+        :param storage Storage backend to use.
+        :param runtime Docker image to use as runtime.
+        :param runtime_memory Memory to assign to each function.
+        :param rabbitmq_monitor Use RabbitMQ queues to retrieve status results instead of Storage.
+        :param workers Maximum number of workers to use.
+        :param remote_invoker Use remote invocation functionality. 
+        :param async_invoke Asynchronous invocation, does not wait for functions to end execution.
+        :param get_result Get functions result.
         """
 
-        self.lithops_config = lithops_config
-        self.wait_for_result = wait_for_result
-        self.fetch_result = fetch_result
-        self.clean_data = clean_data
+        self.lithops_config = config if config is not None else {}
+        self.async_invoke = async_invoke
+        self.get_result = get_result
 
-        self.extra_env = extra_env
-        self.runtime_memory = runtime_memory
-        self.timeout = timeout
-        self.include_modules = include_modules
-        self.exclude_modules = exclude_modules
+        self._executor_params = {
+            'type': type,
+            'config': config,
+            'backend': backend,
+            'storage': storage,
+            'runtime': runtime,
+            'runtime_memory': runtime_memory,
+            'rabbitmq_monitor': rabbitmq_monitor,
+            'workers': workers,
+            'remote_invoker': remote_invoker
+        }
 
         self._function_result = None
         self._futures = None
@@ -77,35 +86,56 @@ class LithopsOperator(BaseOperator):
         self._futures = self.execute_callable(context)
         self.log.info("Execution Done")
 
-        if self.wait_for_result:
+        if not self.async_invoke:
             self._executor.wait(fs=self._futures)
         else:
             self.log.info("Done: Not waiting for result")
 
-        if self.fetch_result and self.wait_for_result:
+        if self.get_result and not self.async_invoke:
             self._function_result = self._executor.get_result(fs=self._futures)
-            self.log.info("Returned value was: {}".format(
+            self.log.debug("Returned value was: {}".format(
                 self._function_result))
         else:
             self.log.info("Done: Not downloading results")
 
-        return self._function_result if self.fetch_result else self._futures
+        return self._function_result if self.get_result else self._futures
 
     def execute_callable(self, context):
         raise NotImplementedError()
 
 
 class LithopsCallAsyncOperator(LithopsOperator):
-    def __init__(self, func, data={}, data_from_task={}, **kwargs):
+    def __init__(self,
+                 func,
+                 data,
+                 data_from_task=None,
+                 extra_env=None,
+                 runtime_memory=None,
+                 timeout=None,
+                 include_modules=[],
+                 exclude_modules=[],
+                 **kwargs):
         """
-        Executes an asyncronoys single function execution.
-        :param function : Function callable.
-        :param function_args : Function arguments.
+        For running one function execution asynchronously
+
+        :param func: the function to map over the data
+        :param data: input data
+        :param data_from_task: get data from another task as input
+        :param extra_env: Additional environment variables for action environment. Default None.
+        :param runtime_memory: Memory to use to run the function. Default None (loaded from config).
+        :param timeout: Time that the functions have to complete their execution before raising a timeout.
+        :param include_modules: Explicitly pickle these dependencies.
+        :param exclude_modules: Explicitly keep these modules from pickled dependencies.
         """
 
         self.func = func
-        self.data = data
-        self.data_from_task = data_from_task
+        self.data = data if data is not None else {}
+        self.data_from_task = data_from_task if data_from_task is not None else {}
+        self.extra_env = extra_env
+        self.runtime_memory = runtime_memory
+        self.timeout = timeout
+        self.include_modules = include_modules
+        self.exclude_modules = exclude_modules
 
         super().__init__(**kwargs)
 
@@ -114,11 +144,16 @@ class LithopsCallAsyncOperator(LithopsOperator):
         Overrides 'execute_callable' from LithopsOperator.
         Wrap of Lithops call async function.
         """
-        for k, v in self.data_from_task.items():
-            self.data[k] = context['task_instance'].xcom_pull(task_ids=v)
+        for kwarg, value in self.data_from_task.items():
+            data = context['task_instance'].xcom_pull(task_ids=value)
+            if isinstance(self.data, list):
+                self.data.append(data)
+            elif isinstance(self.data, dict):
+                self.data[kwarg] = data
 
         self.log.debug("Params: {}".format(self.data))
-        return self._executor.call_async(self.func, self.data,
+        return self._executor.call_async(func=self.func,
+                                         data=self.data,
                                          extra_env=self.extra_env,
                                          runtime_memory=self.runtime_memory,
                                          timeout=self.timeout,
@@ -132,14 +167,32 @@ class LithopsMapOperator(LithopsOperator):
                  map_iterdata=None,
                  iterdata_from_task=None,
                  extra_args=None,
+                 extra_env=None,
+                 runtime_memory=None,
                  chunk_size=None,
                  chunk_n=None,
+                 timeout=None,
                  invoke_pool_threads=500,
+                 include_modules=[],
+                 exclude_modules=[],
                  **kwargs):
         """
         Executes a parallel map function.
-        :param map_function : Map function callable.
-        :param map_iterdata : Iterable data structure.
+
+        :param map_function: the function to map over the data
+        :param map_iterdata: An iterable of input data
+        :param extra_args: Additional arguments to pass to the function activation. Default None.
+        :param extra_env: Additional environment variables for action environment. Default None.
+        :param runtime_memory: Memory to use to run the function. Default None (loaded from config).
+        :param chunk_size: the size of the data chunks to split each object. 'None' for processing
+                           the whole file in one function activation.
+        :param chunk_n: Number of chunks to split each object. 'None' for processing the whole
+                        file in one function activation.
+        :param remote_invocation: Enable or disable remote_invocation mechanism. Default 'False'
+        :param timeout: Time that the functions have to complete their execution before raising a timeout.
+        :param invoke_pool_threads: Number of threads to use to invoke.
+        :param include_modules: Explicitly pickle these dependencies.
+        :param exclude_modules: Explicitly keep these modules from pickled dependencies.
         """
         super().__init__(**kwargs)
 
@@ -151,13 +204,18 @@ class LithopsMapOperator(LithopsOperator):
         self.map_iterdata = map_iterdata
         self.iterdata_from_task = iterdata_from_task
         self.extra_args = extra_args
+        self.extra_env = extra_env
+        self.runtime_memory = runtime_memory
         self.chunk_size = chunk_size
         self.chunk_n = chunk_n
+        self.timeout = timeout
         self.invoke_pool_threads = invoke_pool_threads
+        self.include_modules = include_modules
+        self.exclude_modules = exclude_modules
 
     def execute_callable(self, context):
         """
-        Overrides 'execute_callable' from IbmPyWrenOperator.
+        Overrides 'execute_callable' from LithopsOperator.
         Wrap of Lithops map function.
         """
         if self.iterdata_from_task is not None:
@@ -185,26 +243,45 @@ class LithopsMapOperator(LithopsOperator):
 
 
 class LithopsMapReduceOperator(LithopsOperator):
-    def __init__(
-            self,
-            map_function, reduce_function,
-            map_iterdata=None,
-            iterdata_from_task=None,
-            extra_args=None,
-            map_runtime_memory=None,
-            reduce_runtime_memory=None,
-            chunk_size=None,
-            chunk_n=None,
-            reducer_one_per_object=False,
-            reducer_wait_local=False,
-            invoke_pool_threads=500,
-            **kwargs):
+    def __init__(self,
+                 map_function,
+                 reduce_function,
+                 map_iterdata=None,
+                 iterdata_from_task=None,
+                 extra_args=None,
+                 extra_env=None,
+                 map_runtime_memory=None,
+                 reduce_runtime_memory=None,
+                 chunk_size=None,
+                 chunk_n=None,
+                 timeout=None,
+                 invoke_pool_threads=500,
+                 reducer_one_per_object=False,
+                 reducer_wait_local=False,
+                 include_modules=[],
+                 exclude_modules=[],
+                 **kwargs):
         """
-        Initializes IBM Cloud Function Basic Operator. Multiple parallel function execution.
-        with a reduce function that merges the results.
-        :param map_function : Map function callable.
-        :param map_iterdata Iterable data structure.
-        :param reduce_function : Reduce function callable.
+        Map the map_function over the data and apply the reduce_function across all futures.
+        This method is executed all within CF.
+
+        :param map_function: the function to map over the data
+        :param map_iterdata:  the function to reduce over the futures
+        :param reduce_function:  the function to reduce over the futures
+        :param extra_env: Additional environment variables for action environment. Default None.
+        :param extra_args: Additional arguments to pass to function activation. Default None.
+        :param map_runtime_memory: Memory to use to run the map function. Default None (loaded from config).
+        :param reduce_runtime_memory: Memory to use to run the reduce function. Default None (loaded from config).
+        :param chunk_size: the size of the data chunks to split each object. 'None' for processing
+                           the whole file in one function activation.
+        :param chunk_n: Number of chunks to split each object. 'None' for processing the whole
+                        file in one function activation.
+        :param timeout: Time that the functions have to complete their execution before raising a timeout.
+        :param reducer_one_per_object: Set one reducer per object after running the partitioner
+        :param reducer_wait_local: Wait for results locally
+        :param invoke_pool_threads: Number of threads to use to invoke.
+        :param include_modules: Explicitly pickle these dependencies.
+        :param exclude_modules: Explicitly keep these modules from pickled dependencies.
         """
 
         self.map_function = map_function
@@ -217,19 +294,23 @@ class LithopsMapReduceOperator(LithopsOperator):
         self.iterdata_from_task = iterdata_from_task
         self.reduce_function = reduce_function
         self.extra_args = extra_args
+        self.extra_env = extra_env
         self.map_runtime_memory = map_runtime_memory
         self.reduce_runtime_memory = reduce_runtime_memory
         self.chunk_size = chunk_size
         self.chunk_n = chunk_n
+        self.timeout = timeout
         self.reducer_one_per_object = reducer_one_per_object
         self.reducer_wait_local = reducer_wait_local
         self.invoke_pool_threads = invoke_pool_threads
+        self.include_modules = include_modules
+        self.exclude_modules = exclude_modules
 
         super().__init__(**kwargs)
 
     def execute_callable(self, context):
         """
-        Overrides 'execute_callable' from IbmCloudFunctionsOperator.
+        Overrides 'execute_callable' from LithopsOperator.
         Wrap of Lithops map reduce function.
         """
         if self.iterdata_from_task is not None:
@@ -238,8 +319,7 @@ class LithopsMapReduceOperator(LithopsOperator):
                 values = context['task_instance'].xcom_pull(task_ids=task_id)
                 self.map_iterdata = [{kwarg: value} for value in values]
             else:
-                self.map_iterdata = context['task_instance'].xcom_pull(
-                    task_ids=self.iterdata_from_task)
+                self.map_iterdata = context['task_instance'].xcom_pull(task_ids=self.iterdata_from_task)
 
         self.log.debug("Params: {}".format(self.map_iterdata))
 

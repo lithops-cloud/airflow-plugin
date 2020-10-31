@@ -1,1 +1,1 @@
-from . import plugin
+from .lithops_plugin import *

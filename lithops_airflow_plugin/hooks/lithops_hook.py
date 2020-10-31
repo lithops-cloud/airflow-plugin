@@ -17,7 +17,7 @@
 from airflow.hooks.base_hook import BaseHook
 from airflow.exceptions import AirflowException
 
-from lithops import function_executor
+from lithops import FunctionExecutor
 
 
 class LithopsHook(BaseHook):
@@ -30,7 +30,7 @@ class LithopsHook(BaseHook):
         try:
             conn = self.get_connection(conn_id)
             self.lithops_config = conn.extra_dejson
-            self.log.debug('lithops config load from Airflow connections')
+            self.log.info('lithops config load from Airflow connections')
         except AirflowException:
             self.log.warning('Could not find Lithops config in Airflow connections, \
             loading from ~/.lithops_config instead')
@@ -42,4 +42,4 @@ class LithopsHook(BaseHook):
         """
         lithops_executor_config['log_level'] = 'DEBUG'
         lithops_executor_config['config'] = self.lithops_config
-        return function_executor(**lithops_executor_config)
+        return FunctionExecutor(**lithops_executor_config)
