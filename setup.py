@@ -39,7 +39,7 @@ setuptools.setup(
     python_requires='>=3.6',
     entry_points = {
         'airflow.plugins': [
-            'plugin = lithops_airflow_plugin.plugin:LithopsAirflowPlugin'
+            'plugin = lithops_airflow_plugin.lithops_plugin:LithopsAirflowPlugin'
         ]
     }
 )

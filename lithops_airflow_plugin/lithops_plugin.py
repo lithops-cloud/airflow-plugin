@@ -16,17 +16,17 @@
 
 from airflow.plugins_manager import AirflowPlugin
 
-from lithops_airflow_plugin.hooks.cloudbutton_toolkit_hook import CloudbuttonToolkitHook
-from lithops_airflow_plugin.operators.cloudbutton_operator import (
-    CloudbuttonCallAsyncOperator,
-    CloudbuttonMapOperator,
-    CloudbuttonMapReduceOperator
+from lithops_airflow_plugin.hooks.lithops_hook import LithopsHook
+from lithops_airflow_plugin.operators.lithops_operator import (
+    LithopsCallAsyncOperator,
+    LithopsMapOperator,
+    LithopsMapReduceOperator,
 )
 
 
 class LithopsAirflowPlugin(AirflowPlugin):
     name = "lithops_airflow_plugin"
-    operators = [CloudbuttonCallAsyncOperator,
-                 CloudbuttonMapOperator,
-                 CloudbuttonMapReduceOperator]
-    hooks = [CloudbuttonToolkitHook]
+    operators = [LithopsCallAsyncOperator,
+                 LithopsMapOperator,
+                 LithopsMapReduceOperator]
+    hooks = [LithopsHook]
